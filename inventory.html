@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-<base href="https://rmas-ce.github.io/VS-INVENTORY-MANAGEMENT/">
 <script>function vsPl(n,one,many){return (Number(n)===1)?one:(many||one+'s');}
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-<title>Inventory Viewer · VaultSync</title>
+<title>Inventory · VaultSync</title>
+<link rel="manifest" href="manifest.webmanifest">
 <script>
 /* Phone showing the page like a desktop site (Chrome "Desktop site" setting,
    some Samsung/Xiaomi browsers, or an app installed while that was on):
@@ -221,6 +221,21 @@ body.mobile-app .kcol-scroll{max-height:calc(var(--vh) * 72);}
 .kanban-col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;}
 .kanban-col-head h4{font-size:12.5px;}
 .kanban-count{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ink-soft);}
+/* Phone: one status at a time, picked from a sticky tab bar (no scroll box inside a scroll box) */
+.req-mtabs{display:none;}
+@media(max-width:980px){
+  .req-mtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;position:sticky;top:var(--req-tabs-top,61px);z-index:15;background:var(--bg);padding:8px 0 10px;margin:-4px 0 6px;}
+  .req-mtabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:12px;padding:7px 2px 6px;font:inherit;font-size:11px;font-weight:600;line-height:1.2;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:0;}
+  .req-mtabs button b{font-size:17px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .req-mtabs button.on{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:var(--shadow);}
+  .req-mtabs button.on b{color:#fff;}
+  .kanban.m-tabs .kanban-col{display:none;}
+  .kanban.m-tabs .kanban-col.m-on{display:block;}
+  .kanban.m-tabs .kanban-col-head{display:none;}
+  .kanban.m-tabs .kcol-scroll, body.mobile-app .kanban.m-tabs .kcol-scroll{max-height:none;overflow:visible;margin-right:0;padding-right:0;}
+  .req-swipe-hint{display:block;text-align:center;font-size:11px;color:var(--ink-faint);margin:10px 0 2px;}
+}
+.req-swipe-hint{display:none;}
 .kcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow);}
 .kcard-top{display:flex;justify-content:space-between;gap:6px;} .kcard-code{font-weight:700;font-size:12.5px;}
 .kcard-desc{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
@@ -612,23 +627,6 @@ body.mobile-app .topbar{top:0}
 body.mobile-app .login-screen{min-height:calc(var(--vh) * 100)}
 .brand-mark{background:transparent !important;box-shadow:0 4px 14px rgba(21,80,230,.22) !important}
 </style>
-<style id="vsViewerCss">
-/* ===== VIEW-ONLY MODE: every control that changes data is removed ===== */
-.admin-only, .status-select,
-#btnStockIn, #btnStockOut, #btnNewReq, #btnNewTrf, #btnNewTs, #btnNewStore, #btnGoScan, #btnRepairRejected,
-[data-dispose], [data-advance], [data-trf-advance], [data-proof-up], [data-al-proof-up], [data-approve], [data-reject],
-[data-edit-ts], [data-delete-ts], [data-edit-store], [data-delete-store], [data-reset-region], [data-qr],
-#pvVerify, #pvReject, #pvReupload, #pvRejectWrap,
-#logoutBtn, #installAppBtn, #changeAdminPwBtn, #changeRegionPwBtn, #regionAccountsBtn, #requestKeyBtn,
-#alertSettingsBtn, #exportDataBtn, #replacePosmBtn, #resetDataBtn, .kcard-actions:empty,
-.vsv-hide{display:none !important}
-
-.vsv-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:700 11.5px/1.2 Inter,system-ui,sans-serif;
-  letter-spacing:.02em;background:#FFF4D6;color:#7A4B00;border:1px solid #F0D18A;white-space:nowrap}
-.vsv-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:#D99A06}
-
-.vsv-badge{margin-left:10px}
-</style>
 </head>
 <body>
 <div class="vs-suite" role="navigation" aria-label="VaultSync tools"><a class="vs-home" href="https://rmas-ce.github.io/CE-VAULT-SYNC/" aria-label="VaultSync home"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+CiAgPHRpdGxlPlZhdWx0IFN5bmM8L3RpdGxlPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMC4zNSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzJkNjJlNiIvPjxzdG9wIG9mZnNldD0iMC41NSIgc3RvcC1jb2xvcj0iIzFhM2ZjNCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzBmMmE4YyIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTAwIiBmaWxsPSJ1cmwoI2JnKSIvPgogIDxyZWN0IHg9IjgiIHk9IjgiIHdpZHRoPSI0OTYiIGhlaWdodD0iNDk2IiByeD0iOTMiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzZmOTZmZiIgc3Ryb2tlLW9wYWNpdHk9IjAuNSIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgPHJlY3QgeD0iODgiIHk9Ijk2IiB3aWR0aD0iMzM2IiBoZWlnaHQ9IjMyMCIgcng9IjM0IiBmaWxsPSIjNGQ3Y2YwIiBmaWxsLW9wYWNpdHk9IjAuMyIgc3Ryb2tlPSIjYzlkYmZmIiBzdHJva2Utd2lkdGg9IjI2Ii8+CiAgPGcgc3Ryb2tlPSIjYzlkYmZmIiBzdHJva2Utd2lkdGg9IjI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiPjxwYXRoIGQ9Ik02NCwxNzYgaDMwIE02NCwzMzYgaDMwIi8+PC9nPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI1NiwyNTYpIiBmaWxsPSJub25lIiBzdHJva2U9IiNlM2VlZmYiIHN0cm9rZS13aWR0aD0iMzAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+CiAgICA8cGF0aCBkPSJNLTEwMCwtMzYgQTEwNiwxMDYgMCAwIDEgOTIsLTUzIE01NSwtNjggTDkyLC01MyBMOTgsLTkzIi8+CiAgICA8cGF0aCBkPSJNMTAwLDM2IEExMDYsMTA2IDAgMCAxIC05Miw1MyBNLTU1LDY4IEwtOTIsNTMgTC05OCw5MyIvPgogIDwvZz4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjMwIiBmaWxsPSIjZTlmMmZmIi8+Cjwvc3ZnPgo=" alt="" width="26" height="26"><span>Vault<b>Sync</b></span></a><nav><a href="https://rmas-ce.github.io/VS-INVENTORY-MANAGEMENT/" data-vs="inventory" aria-current="page">Inventory</a><a href="https://rmas-ce.github.io/VS-REQUEST-FORM/" data-vs="request">Requests</a><a href="https://rmas-ce.github.io/VS-REQUEST-FORM/#proof" data-vs="proof">Proof</a><a href="https://rmas-ce.github.io/VS-TS-GRADING/" data-vs="scorecard">Scorecard</a><a href="https://rmas-ce.github.io/CE-VAULT-SYNC/#guides" data-vs="guides">Guides</a></nav></div>
@@ -896,9 +894,7 @@ function disposalRelevant(p, whId){
 
 /* ============================= APPS SCRIPT CONFIG =============================
    The deployed Google Apps Script Web App URL (Deploy > Manage deployments > Web app). */
-/* ===== MANAGEMENT VIEWER: paste the Viewer Mirror web app URL (ends in /exec) here ===== */
-const MIRROR_URL = 'https://script.google.com/macros/s/AKfycbyOQAjMXR0Y8XIwDlISO3cYFiU7ICfbVyNOj3yo-kyCOh8ZhFcYlZlkazc_CiWb3yX1oA/exec';
-const APPS_SCRIPT_URL_DEFAULT = MIRROR_URL;
+const APPS_SCRIPT_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbxJ7UqqR7WKe9iBu1y9QUm4UdFsZT-oNLnRdwNsG1M2i3DrjvW0YnXY1QHb4H22SQse/exec';
 let TS_LIST = [];    // dynamic, from server: [{id, name, region, status}]
 let STORE_LIST = [];  // dynamic, from server: [{id, name, tsId, region, dealer, status}]
 function activeTsList(){ return TS_LIST.filter(t=>t.status!=='deleted'); }
@@ -1032,9 +1028,7 @@ function setSyncStatus(state, done, total){
 let APPS_SCRIPT_URL = null;
 
 // Login details sent with every read request (Admin password or region account).
-const VIEWER_READS = ['getData','getAlerts','getDeploymentPhotos','getReceipt','getPendingItem','getImages'];
 function readCreds(){
-  if(session && session.viewer) return {};
   if(!session) return {};
   return session.role==='admin' ? {adminPassword: session.password} : {region: session.region, regionPassword: session.password};
 }
@@ -1050,10 +1044,7 @@ async function postAction(action, payload){
   finally{ if(isWrite) mutationEpoch++; }
 }
 async function postActionRaw(action, payload){
-  if(VIEWER_READS.indexOf(action) < 0) throw new Error('View only — changes cannot be made from this page.');
-  if(/PASTE_VIEWER_MIRROR/.test(APPS_SCRIPT_URL)) throw new Error('Viewer not set up yet: paste the Viewer Mirror web app URL into MIRROR_URL.');
   const body = Object.assign({action}, payload);
-  delete body.adminPassword; delete body.regionPassword; delete body.password;
   let json;
   try{
     const res = await fetch(APPS_SCRIPT_URL, {
@@ -1063,7 +1054,6 @@ async function postActionRaw(action, payload){
       redirect: 'follow'
     });
     json = await res.json();
-    if(action==='getData' && json && json._snapshotAt){ window.__vsvSnapAt = json._snapshotAt; delete json._snapshotAt; if(window.vsvStamp) vsvStamp(); }
   }catch(e){
     throw new Error('No connection to the Google Sheet — nothing was saved. Check the internet and try again.');
   }
@@ -1077,7 +1067,7 @@ async function postActionRaw(action, payload){
   return json;
 }
 
-const DATA_CACHE_KEY = 'vsviewer_rmas_posm_data_cache_v1';
+const DATA_CACHE_KEY = 'rmas_posm_data_cache_v1';
 function saveDataCache(d){
   try{
     // Images are loaded separately, so leave them out to keep the cache small.
@@ -1175,7 +1165,7 @@ function requestBackgroundRender(){
 }
 
 /* ============================= SESSION / LOGIN ============================= */
-const SESSION_KEY = 'vsviewer_rmas_posm_session_v1';
+const SESSION_KEY = 'rmas_posm_session_v1';
 let session = null; // {role:'admin'|'user', name, password (admin only, kept for re-auth on each action)}
 
 function loadSession(){
@@ -1462,7 +1452,10 @@ document.getElementById('alertSettingsBtn') && document.getElementById('alertSet
 async function initApp(){
   wireLoginScreen();
   APPS_SCRIPT_URL = APPS_SCRIPT_URL_DEFAULT;
-  session = {role:'admin', name:'Management', viewer:true, password:''};
+  session = loadSession();
+  // Old name-only "User" sessions are no longer valid — those people now log in with a region account.
+  if(session && session.role==='user' && !session.region){ clearSession(); session = null; }
+  if(!session){ showLoginScreen(); return; }
   if(isRegionUser()){
     // Checked in the background so the saved data shows instantly.
     postAction('regionLogin', {region: session.region, password: session.password}).catch(e=>{
@@ -1522,10 +1515,9 @@ async function proceedAfterLogin(){
 let connectRetryTimer = null;
 async function connectBackend(){
   clearTimeout(connectRetryTimer);
-  if(/PASTE_VIEWER_MIRROR/.test(APPS_SCRIPT_URL)){ document.getElementById('content').innerHTML = '<div class="empty-state" style="padding:60px 20px;">Viewer not set up yet — paste the Viewer Mirror web app URL into <b>MIRROR_URL</b> in inventory.html.</div>'; setSyncStatus('error'); return; }
   try{
     const check = await fetch(APPS_SCRIPT_URL+'?action=checkSeeded&t='+Date.now(), {redirect:'follow'}).then(r=>r.json());
-    if(!(session && session.viewer) && (!check.seeded || !check.orgSeeded)){
+    if(!check.seeded || !check.orgSeeded){
       // First-ever load pushes the full baseline data once. If this Sheet was
       // seeded before Trade Supervisor/Store support existed, orgSeeded will
       // still be false — this same call backfills just that part, since the
@@ -1869,13 +1861,11 @@ const SECTIONS = [
   {key:'geofence', label:'Warehouse Locations', icon:'pin', sub:'Lock Stock In / Out to a map radius around each warehouse', adminOnly:true, group:'Admin'},
   {key:'orgmanage', label:'Trade Supervisors & Stores', icon:'org', sub:'Add, rename, reassign, or remove Trade Supervisors and Stores', regionSub:'Trade Supervisors and Stores of your region (only Admin can add, edit or remove)', group:'Admin'},
 ];
-let currentSection = (function(){ const h = (location.hash||'').slice(1); return ['inventory','stockflow','requests','rejected','metrics','beginning','movement'].includes(h) ? h : 'dashboard'; })();
+let currentSection = 'dashboard';
 let charts = {};
 
-const VIEWER_HIDDEN = ['scan','labels','pending','mysubs','geofence','orgmanage'];
 function visibleSections(){
   return SECTIONS.filter(s=>{
-    if(VIEWER_HIDDEN.includes(s.key)) return false;
     if(s.adminOnly) return session && session.role==='admin';
     if(s.userOnly) return session && session.role==='user';
     return true;
@@ -1884,7 +1874,6 @@ function visibleSections(){
 
 function renderNav(){
   if(!DATA) return;
-  if(VIEWER_HIDDEN.includes(currentSection)) currentSection = 'dashboard';
   const nav = document.getElementById('nav');
   const pendingReq = DATA.requests.filter(r=>r.status==='for_sorting'||r.status==='for_delivery').length;
   const pendingApprovalCount = (DATA.pendingActions||[]).filter(p=>p.status==='pending').length;
@@ -1907,7 +1896,7 @@ function renderNav(){
   });
   const pill = document.getElementById('sessionPill');
   if(pill && session){
-    pill.innerHTML = `Viewing as<br><b>${session.name}</b><span class="role-badge ${session.role}">View only</span>`;
+    pill.innerHTML = `Logged in as<br><b>${session.name}</b><span class="role-badge ${session.role}">${session.role==='admin'?'Admin':(session.region?'Region':'User')}</span>`;
   }
 }
 /* ============================= NOTIFICATION BELL ============================= */
@@ -2140,6 +2129,24 @@ function pkReadExif(buf){
   }catch(e){}
   return out;
 }
+// Real-time photos only: the photo must have been taken just now with the camera (no old / gallery photos).
+var PK_LIVE_MIN = 10;
+var PK_MAX_PHOTOS = Infinity; // no limit on proof photos per upload
+function pkCheckLive(info){
+  const now = Date.now(), lim = PK_LIVE_MIN*60000, lm = Number(info.lastModified)||0;
+  let t = 0; if(info.takenAt){ const d = new Date(String(info.takenAt)); if(!isNaN(d)) t = d.getTime(); }
+  if((lm && now - lm > lim) || (t && now - t > lim))
+    throw new Error('Real-time photo only — this photo was not taken just now. Please tap "Take photo" and take a new picture at the store.');
+}
+// Keep each photo small in memory (max 1400px) so TS can take many photos without the phone running out of memory.
+async function pkShrink(bmp){
+  const W = bmp.width||bmp.naturalWidth, H = bmp.height||bmp.naturalHeight, s = Math.min(1, 1400/Math.max(W,H));
+  if(s >= 1) return bmp;
+  const c = document.createElement('canvas'); c.width = Math.round(W*s); c.height = Math.round(H*s);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  try{ if(bmp.close) bmp.close(); }catch(e){}
+  return c;
+}
 async function pkLoadBitmap(file){
   if(window.createImageBitmap){ try{ return await createImageBitmap(file, {imageOrientation:'from-image'}); }catch(e){} }
   return await new Promise((res, rej)=>{ const url = URL.createObjectURL(file); const im = new Image(); im.onload = ()=>{ res(im); }; im.onerror = ()=>rej(new Error('This file is not a photo the browser can open.')); im.src = url; });
@@ -2165,7 +2172,7 @@ async function pkInspect(file){
   const buf = await file.arrayBuffer();
   const hash = await pkSha256(buf);
   const exif = pkReadExif(buf);
-  const bmp = await pkLoadBitmap(file);
+  const bmp = await pkShrink(await pkLoadBitmap(file));
   const ahash = pkDHash(bmp);
   const c = document.createElement('canvas'); const s = Math.min(1, 240 / Math.max(bmp.width, bmp.height));
   c.width = Math.round(bmp.width*s); c.height = Math.round(bmp.height*s); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
@@ -2236,7 +2243,8 @@ function proofIndex(){
 }
 function proofOf(r){ return r ? (proofIndex()[r.id] || null) : null; }
 function proofStartDate(){ return (DATA_ALL && DATA_ALL.proofStartDate) || '9999-12-31'; }
-function proofGrace(){ return (DATA_ALL && Number(DATA_ALL.proofGraceDays)) || 3; }
+var PROOF_DUE_DAYS = 10; // proof of deployment photo is due 10 days after Delivered
+function proofGrace(){ return PROOF_DUE_DAYS; }
 function isDeployed(r){ const p = proofOf(r); return !!(r && r.status==='delivered' && p && (p.status==='for_review' || p.status==='verified')); }
 function daysSinceDate(d){ return Math.max(0, Math.round((new Date(todayStr()) - new Date(String(d).slice(0,10)))/86400000)); }
 // Delivered more than the grace days ago, and still no accepted proof.
@@ -2264,7 +2272,8 @@ function proofChipHtml(r){
   if(p && p.status==='rejected') return `<span class="badge expired">Proof rejected — upload again</span>`;
   if(!r.dateDelivered || String(r.dateDelivered) < proofStartDate()) return `<span class="cell-sub">No proof (delivered before proof tracking)</span>`;
   const d = daysSinceDate(r.dateDelivered);
-  return `<span class="badge ${d>proofGrace()?'expired':'obsolete'}">${icon('camera',11)} No proof yet · ${d===0?'today':d+' day'+(d!==1?'s':'')}</span>`;
+  const left = proofGrace() - d;
+  return `<span class="badge ${d>proofGrace()?'expired':'obsolete'}">${icon('camera',11)} No proof yet · ${left<0 ? (-left)+' day'+(left!==-1?'s':'')+' overdue' : (left===0 ? 'due today' : 'due in '+left+' day'+(left!==1?'s':''))}</span>`;
 }
 function fmtDT(v){ if(!v) return ''; const d = new Date(v); if(isNaN(d) || !/T\d{2}:\d{2}.*Z$/.test(String(v))) return String(v).replace('T',' ').slice(0,16); return pkFmtStamp(d); }
 function proofStatusLabel(r){
@@ -2280,7 +2289,7 @@ function openProofUploadModal(reqId){
     .sort((a,b)=>(a.id===reqId?-1:b.id===reqId?1:String(b.dateDelivered).localeCompare(String(a.dateDelivered))));
   const st = {pick:{[reqId]:true}, infos:[], gps:null, gpsState:'loading', busy:false};
   openModal(`${icon('camera',16)} Proof of Deployment`, `
-    <p class="login-note" style="margin-top:0;">Upload 1–3 photos of the POSM <b>installed at the store</b>. The request #, store, date/time and GPS are printed on each photo. A photo already used for another request is refused.</p>
+    <p class="login-note" style="margin-top:0;">Take as many photos as needed of the POSM <b>installed at the store</b>. The request #, store, date/time and GPS are printed on each photo. A photo already used for another request is refused.</p>
     <div class="field"><label>Store</label><div style="font-weight:700;">${escHtml(r0.store)}</div></div>
     <div class="field"><label>Requests this proof covers</label><div id="puItems" class="table-wrap scroll-y" style="max-height:170px;"></div></div>
     <div class="field"><label>Photos</label><div id="puShots"></div></div>
@@ -2301,9 +2310,9 @@ function openProofUploadModal(reqId){
   }
   function draw(){
     const flags = st.infos.length ? pkFlags(st.infos, st.gps, earliest()).filter(f=>f!=='no_gps') : [];
-    document.getElementById('puShots').innerHTML = `<div class="proof-shots">${[0,1,2].map(i=>{ const p = st.infos[i];
+    document.getElementById('puShots').innerHTML = `<div class="proof-shots">${Array.from({length: Math.min(PK_MAX_PHOTOS, st.infos.length+1)}, (_,i)=>i).map(i=>{ const p = st.infos[i];
         return p ? `<div class="proof-shot"><img src="${p.thumb}" alt=""><button class="x" data-rm="${i}" type="button">×</button><span class="tag">Camera</span></div>` : `<div class="proof-shot">Photo ${i+1}</div>`; }).join('')}</div>
-      ${st.infos.length<3 ? `<div style="display:flex;gap:8px;margin-top:8px;">
+      ${st.infos.length<PK_MAX_PHOTOS ? `<div class="cell-sub" style="margin-top:6px;">${st.infos.length} photo${st.infos.length!==1?'s':''} taken</div><div style="display:flex;gap:8px;margin-top:8px;">
         <label class="btn primary sm" style="cursor:pointer;">${icon('camera',13)} Take photo<input type="file" accept="image/*" capture="environment" id="puCam" style="display:none;"></label></div>` : ''}
       ${flags.map(f=>`<div class="proof-flag">${icon('alert',13)}<div>${escHtml(pkFlagLabel(f))}</div></div>`).join('')}<div id="puErr"></div>`;
     document.getElementById('puGps').innerHTML = st.gpsState==='loading' ? 'Getting location...' : st.gpsState==='ok'
@@ -2318,7 +2327,7 @@ function openProofUploadModal(reqId){
   }
   async function add(file, gallery){
     if(!file) return;
-    try{ const info = await pkInspect(file); info.gallery = gallery;
+    try{ const info = await pkInspect(file); info.gallery = gallery; pkCheckLive(info);
       if(st.infos.some(x=>x.hash===info.hash)) throw new Error('You already added this same photo.');
       st.infos.push(info); draw();
     }catch(e){ draw(); const el = document.getElementById('puErr'); if(el) el.innerHTML = `<div class="proof-flag" style="background:var(--danger-bg);color:var(--danger);">${escHtml(e.message||'Could not read the photo.')}</div>`; }
@@ -3295,7 +3304,7 @@ let invFilters = {search:'', bu:'all', status:'all'};
 let invScope = 'mine';
 const INV_PAGE = 60;
 // Cards (big pictures) or List (compact table) — remembered on this device.
-let invView = (()=>{ try{ return localStorage.getItem('vsviewer_rmas_inv_view') || 'cards'; }catch(e){ return 'cards'; } })();
+let invView = (()=>{ try{ return localStorage.getItem('rmas_inv_view') || 'cards'; }catch(e){ return 'cards'; } })();
 function whereShort(code){
   const rows = DATA.inventory.filter(r=>r.posmCode===code && r.qty>0).sort((a,b)=>b.qty-a.qty);
   if(!rows.length) return '<span class="cell-sub">No stock anywhere</span>';
@@ -3435,7 +3444,7 @@ function renderInventoryCore(allMode){
   document.getElementById('invBuFilter').addEventListener('change', e=>{ invFilters.bu=e.target.value; invLimit = INV_PAGE; renderInventory(); });
   document.getElementById('invStatusSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ invFilters.status=b.dataset.status; invLimit = INV_PAGE; renderInventory(); }));
   document.getElementById('invViewSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
-    invView = b.dataset.view; try{ localStorage.setItem('vsviewer_rmas_inv_view', invView); }catch(e){}
+    invView = b.dataset.view; try{ localStorage.setItem('rmas_inv_view', invView); }catch(e){}
     renderInventory();
   }));
   const moreBtn = document.getElementById('invMoreBtn');
@@ -3629,6 +3638,33 @@ function reqExportRow(r){
     'Proof of Deployment':proofStatusLabel(r), 'Proof Uploaded By':(proofOf(r)||{}).uploadedBy||'', 'Proof Uploaded At':fmtDT((proofOf(r)||{}).uploadedAt), 'Proof Warnings':String((proofOf(r)||{}).flags||'').split(',').filter(Boolean).map(pkFlagLabel).join('; ')};
 }
 let reqView = 'board';
+let reqMobileTab = (()=>{ try{ return sessionStorage.getItem('vs_req_mtab') || 'for_sorting'; }catch(e){ return 'for_sorting'; } })();
+function setReqMobileTab(key, keepPlace){
+  reqMobileTab = key; try{ sessionStorage.setItem('vs_req_mtab', key); }catch(e){}
+  document.querySelectorAll('.req-mtabs [data-mtab]').forEach(b=>{ const on = b.dataset.mtab===key; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  document.querySelectorAll('.kanban.m-tabs .kanban-col').forEach(c=>c.classList.toggle('m-on', c.dataset.col===key));
+  const tabs = document.querySelector('.req-mtabs');
+  if(tabs && !keepPlace && getComputedStyle(tabs).display!=='none'){
+    const top = tabs.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(tabs).top)||0);
+    if(window.scrollY > top) window.scrollTo({top, behavior:'smooth'});
+  }
+}
+function wireReqMobileTabs(keys){
+  const tabs = document.querySelector('.req-mtabs'), board = document.querySelector('.kanban.m-tabs');
+  if(!tabs || !board) return;
+  const bar = document.querySelector('.topbar');
+  if(bar) tabs.style.setProperty('--req-tabs-top', Math.round(bar.getBoundingClientRect().height)+'px');
+  tabs.querySelectorAll('[data-mtab]').forEach(b=>b.addEventListener('click', ()=>setReqMobileTab(b.dataset.mtab)));
+  let sx=0, sy=0, tracking=false;
+  board.addEventListener('touchstart', e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; tracking = !e.target.closest('input,select,textarea,.table-wrap'); }, {passive:true});
+  board.addEventListener('touchend', e=>{
+    if(!tracking) return; tracking=false;
+    const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy)*1.6) return;   // mostly-horizontal swipes only
+    const i = keys.indexOf(reqMobileTab), j = i + (dx<0 ? 1 : -1);
+    if(j>=0 && j<keys.length) setReqMobileTab(keys[j]);
+  }, {passive:true});
+}
 function renderRequests(){
   const whFilter = currentFilterWarehouse();
   const reqs = DATA.requests.filter(r=> (whFilter==='all'||r.warehouseId===whFilter) && matchesBUFilter(r.posmCode));
@@ -3665,17 +3701,23 @@ function renderRequests(){
 
   if(reqView==='board'){
     document.getElementById('btnNewReq').addEventListener('click', openNewRequestModal);
+    const colItems = {};
+    cols.forEach(c=>{ colItems[c.key] = reqs.filter(r=> c.key==='deployed' ? isDeployed(r) : c.key==='delivered' ? (r.status==='delivered' && !isDeployed(r)) : r.status===c.key).length; });
+    if(!cols.some(c=>c.key===reqMobileTab)) reqMobileTab = 'for_sorting';
     document.getElementById('reqViewRoot').innerHTML = `
-      <div class="kanban">
+      <div class="req-mtabs" role="tablist" aria-label="Request status">${cols.map(c=>`<button type="button" role="tab" data-mtab="${c.key}" class="${c.key===reqMobileTab?'on':''}" aria-selected="${c.key===reqMobileTab}"><b>${colItems[c.key]}</b>${c.label}</button>`).join('')}</div>
+      <div class="kanban m-tabs">
         ${cols.map(c=>{
           const items = reqs.filter(r=> c.key==='deployed' ? isDeployed(r) : c.key==='delivered' ? (r.status==='delivered' && !isDeployed(r)) : r.status===c.key)
             .sort((a,b)=> c.key==='deployed' ? String((proofOf(b)||{}).uploadedAt).localeCompare(String((proofOf(a)||{}).uploadedAt))
               : c.key==='delivered' ? String(b.dateDelivered||'').localeCompare(String(a.dateDelivered||'')) : (c.key==='for_sorting' ? reqArrivalCmp(a,b) : new Date(b.dateCreated)-new Date(a.dateCreated)));
-          return `<div class="kanban-col"><div class="kanban-col-head"><h4><span class="badge ${c.cls}">${c.label}</span></h4><span class="kanban-count">${items.length}</span></div>
+          return `<div class="kanban-col${c.key===reqMobileTab?' m-on':''}" data-col="${c.key}"><div class="kanban-col-head"><h4><span class="badge ${c.cls}">${c.label}</span></h4><span class="kanban-count">${items.length}</span></div>
             <div class="kcol-scroll${c.key==='for_sorting'?' kcol-sorting':''}">${(c.key==='for_sorting' ? sortingByTsHtml(items) : items.slice(0,25).map(reqCardHtml).join('')) || `<div class="empty-state">No requests here.</div>`}</div>
           </div>`;
         }).join('')}
-      </div>`;
+      </div>
+      <div class="req-swipe-hint">Swipe left or right to change status</div>`;
+    wireReqMobileTabs(cols.map(c=>c.key));
     document.querySelectorAll('[data-advance]').forEach(b=>b.addEventListener('click',()=>advanceRequest(b.dataset.advance)));
     loadImagesFor(reqs.filter(r=>r.status==='for_sorting').slice(0,60).map(r=>r.posmCode));
     document.querySelectorAll('[data-proof-up]').forEach(b=>b.addEventListener('click',()=>openProofUploadModal(b.dataset.proofUp)));
@@ -5421,7 +5463,7 @@ function showToast(msg){
 }
 
 /* ============================= SCAN STOCK IN / OUT ============================= */
-const SCAN_DRAFT_KEY = 'vsviewer_rmas_posm_scan_draft_v1';
+const SCAN_DRAFT_KEY = 'rmas_posm_scan_draft_v1';
 const scanState = { mode:'in', warehouseId:'', date:'', ref:'', reason:'Dispatched for store delivery', perScan:1, items:[], receipt:null, last:null, submitting:false, draftLoaded:false };
 let scanner = null, scannerRunning = false, scannerStarting = false, lastDecode = {code:'', at:0};
 
@@ -6018,8 +6060,8 @@ function mobileTabs(){
   const tabs = [
     {key:'dashboard', label:'Home', icon:'dashboard'},
     {key:'inventory', label:'Stock', icon:'inventory'},
-    {key:'requests', label:'Requests', icon:'requests'},
-    {key:'metrics', label:'Metrics', icon:'metrics'},
+    {key:'scan', label:'Scan', icon:'scan', fab:true},
+    isAdmin ? {key:'pending', label:'Approvals', icon:'check'} : (isUser ? {key:'mysubs', label:'My Items', icon:'requests'} : {key:'requests', label:'Requests', icon:'requests'}),
     {key:'__more', label:'More', icon:'more'},
   ];
   return tabs;
@@ -6080,7 +6122,7 @@ async function doInstall(){
 
 /* ---- service worker (offline shell + fast loading) ---- */
 function registerServiceWorker(){
-  return;
+  if(!('serviceWorker' in navigator) || !(location.protocol==='https:' || location.hostname==='localhost')) return;
   const hadController = !!navigator.serviceWorker.controller; // first install isn't an "update"
   navigator.serviceWorker.register('sw.js').then(reg=>{
     reg.addEventListener('updatefound', ()=>{
@@ -6099,7 +6141,7 @@ function showUpdateBar(){
   document.body.appendChild(bar);
 }
 
-const APP_VERSION = '2026.10.12-v26';
+const APP_VERSION = '2026.10.16-v27';
 function updateVersionInfo(){
   const el = document.getElementById('appVersionInfo'); if(!el) return;
   el.textContent = `Version ${APP_VERSION} · ${isStandalone()?'installed app':'browser'} · ${window.innerWidth}px${(window.__appZoom||1)>1?' · zoom '+window.__appZoom:''}`;
@@ -6128,52 +6170,6 @@ function initMobileShell(){
 if(location.hash==='#scan') currentSection='scan';
 initMobileShell();
 
-</script>
-
-<script>
-(function(){
-  var base = location.href.split(/[?#]/)[0].replace(/[^\/]*$/, '');
-  var map = {inventory: base+'inventory.html', request: base+'inventory.html#requests', proof: base+'inventory.html#requests',
-             scorecard: base+'scorecard.html', guides: base+'index.html#guides', home: base+'index.html'};
-  function fix(){
-    document.querySelectorAll('.vs-suite a, a.vs-back, a.vs-mhome').forEach(function(a){
-      var h = a.getAttribute('href')||'', k = a.getAttribute('data-vs');
-      if(!k){
-        if(/VS-INVENTORY/.test(h)) k='inventory'; else if(/#proof/.test(h)) k='proof'; else if(/VS-REQUEST/.test(h)) k='request';
-        else if(/VS-TS-GRADING/.test(h)) k='scorecard'; else if(/#guides/.test(h)) k='guides'; else if(/CE-VAULT-SYNC/.test(h)) k='home';
-      }
-      if(k==='proof'){ a.remove(); return; }
-      if(map[k]) a.setAttribute('href', map[k]);
-      a.removeAttribute('target');
-    });
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', fix); else fix();
-})();
-</script>
-<script>
-(function(){
-  var WRITE = /^(add|new |edit|delete|remove|save|update|approve|reject|verify|stock in|stock out|transfer|upload|submit|create|import|replace|reset|repair|restore|set$|generate|mark |move to|dispose|scan|start camera|use my current location|change .*password|send test|print label|clear)/i;
-  var KEEP  = /(excel|pdf|export|download|report|print|view|close|cancel|show more|filter|refresh|try again|got it|done|weekly|monthly|cards|list|stock in other)/i;
-  function sweep(root){
-    (root.querySelectorAll ? root : document).querySelectorAll('button, label.btn, input[type=file]').forEach(function(b){
-      var t = (b.textContent||'').replace(/\s+/g,' ').trim();
-      if(t && WRITE.test(t) && !KEEP.test(t)) b.classList.add('vsv-hide');
-    });
-  }
-  function badge(){
-    var h = document.getElementById('pageTitle');
-    if(h && !document.getElementById('vsvBadge')){ var s = document.createElement('span'); s.id='vsvBadge'; s.className='vsv-badge'; s.textContent='View only'; h.after(s); vsvStamp(); }
-  }
-  window.vsvStamp = function(){
-    var b = document.getElementById('vsvBadge'); if(!b || !window.__vsvSnapAt) return;
-    var d = new Date(window.__vsvSnapAt);
-    b.textContent = 'View only · data as of ' + d.toLocaleString('en-PH', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
-  };
-  new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType===1) sweep(n); }); }); badge(); })
-    .observe(document.documentElement, {childList:true, subtree:true});
-  document.addEventListener('DOMContentLoaded', function(){ sweep(document); badge(); });
-  window.addEventListener('hashchange', function(){ var h = location.hash.slice(1); if(typeof SECTIONS!=='undefined' && SECTIONS.some(function(s){return s.key===h;}) && VIEWER_HIDDEN.indexOf(h)<0){ currentSection = h; renderAll(); } });
-})();
 </script>
 </body>
 </html>
