@@ -221,6 +221,21 @@ body.mobile-app .kcol-scroll{max-height:calc(var(--vh) * 72);}
 .kanban-col-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px;}
 .kanban-col-head h4{font-size:12.5px;}
 .kanban-count{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ink-soft);}
+/* Phone: one status at a time, picked from a sticky tab bar (no scroll box inside a scroll box) */
+.req-mtabs{display:none;}
+@media(max-width:980px){
+  .req-mtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;position:sticky;top:var(--req-tabs-top,61px);z-index:15;background:var(--bg);padding:8px 0 10px;margin:-4px 0 6px;}
+  .req-mtabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:12px;padding:7px 2px 6px;font:inherit;font-size:11px;font-weight:600;line-height:1.2;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:0;}
+  .req-mtabs button b{font-size:17px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .req-mtabs button.on{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:var(--shadow);}
+  .req-mtabs button.on b{color:#fff;}
+  .kanban.m-tabs .kanban-col{display:none;}
+  .kanban.m-tabs .kanban-col.m-on{display:block;}
+  .kanban.m-tabs .kanban-col-head{display:none;}
+  .kanban.m-tabs .kcol-scroll, body.mobile-app .kanban.m-tabs .kcol-scroll{max-height:none;overflow:visible;margin-right:0;padding-right:0;}
+  .req-swipe-hint{display:block;text-align:center;font-size:11px;color:var(--ink-faint);margin:10px 0 2px;}
+}
+.req-swipe-hint{display:none;}
 .kcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow);}
 .kcard-top{display:flex;justify-content:space-between;gap:6px;} .kcard-code{font-weight:700;font-size:12.5px;}
 .kcard-desc{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
@@ -1869,7 +1884,7 @@ const SECTIONS = [
   {key:'geofence', label:'Warehouse Locations', icon:'pin', sub:'Lock Stock In / Out to a map radius around each warehouse', adminOnly:true, group:'Admin'},
   {key:'orgmanage', label:'Trade Supervisors & Stores', icon:'org', sub:'Add, rename, reassign, or remove Trade Supervisors and Stores', regionSub:'Trade Supervisors and Stores of your region (only Admin can add, edit or remove)', group:'Admin'},
 ];
-let currentSection = (function(){ const h = (location.hash||'').slice(1); return ['inventory','stockflow','requests','rejected','metrics','beginning','movement'].includes(h) ? h : 'dashboard'; })();
+let currentSection = (function(){ const h = window.__VSV_SECTION || (location.hash||'').slice(1); return ['inventory','stockflow','requests','rejected','metrics','beginning','movement'].includes(h) ? h : 'dashboard'; })();
 let charts = {};
 
 const VIEWER_HIDDEN = ['scan','labels','pending','mysubs','geofence','orgmanage'];
@@ -2140,6 +2155,24 @@ function pkReadExif(buf){
   }catch(e){}
   return out;
 }
+// Real-time photos only: the photo must have been taken just now with the camera (no old / gallery photos).
+var PK_LIVE_MIN = 10;
+var PK_MAX_PHOTOS = Infinity; // no limit on proof photos per upload
+function pkCheckLive(info){
+  const now = Date.now(), lim = PK_LIVE_MIN*60000, lm = Number(info.lastModified)||0;
+  let t = 0; if(info.takenAt){ const d = new Date(String(info.takenAt)); if(!isNaN(d)) t = d.getTime(); }
+  if((lm && now - lm > lim) || (t && now - t > lim))
+    throw new Error('Real-time photo only — this photo was not taken just now. Please tap "Take photo" and take a new picture at the store.');
+}
+// Keep each photo small in memory (max 1400px) so TS can take many photos without the phone running out of memory.
+async function pkShrink(bmp){
+  const W = bmp.width||bmp.naturalWidth, H = bmp.height||bmp.naturalHeight, s = Math.min(1, 1400/Math.max(W,H));
+  if(s >= 1) return bmp;
+  const c = document.createElement('canvas'); c.width = Math.round(W*s); c.height = Math.round(H*s);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  try{ if(bmp.close) bmp.close(); }catch(e){}
+  return c;
+}
 async function pkLoadBitmap(file){
   if(window.createImageBitmap){ try{ return await createImageBitmap(file, {imageOrientation:'from-image'}); }catch(e){} }
   return await new Promise((res, rej)=>{ const url = URL.createObjectURL(file); const im = new Image(); im.onload = ()=>{ res(im); }; im.onerror = ()=>rej(new Error('This file is not a photo the browser can open.')); im.src = url; });
@@ -2165,7 +2198,7 @@ async function pkInspect(file){
   const buf = await file.arrayBuffer();
   const hash = await pkSha256(buf);
   const exif = pkReadExif(buf);
-  const bmp = await pkLoadBitmap(file);
+  const bmp = await pkShrink(await pkLoadBitmap(file));
   const ahash = pkDHash(bmp);
   const c = document.createElement('canvas'); const s = Math.min(1, 240 / Math.max(bmp.width, bmp.height));
   c.width = Math.round(bmp.width*s); c.height = Math.round(bmp.height*s); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
@@ -2236,7 +2269,8 @@ function proofIndex(){
 }
 function proofOf(r){ return r ? (proofIndex()[r.id] || null) : null; }
 function proofStartDate(){ return (DATA_ALL && DATA_ALL.proofStartDate) || '9999-12-31'; }
-function proofGrace(){ return (DATA_ALL && Number(DATA_ALL.proofGraceDays)) || 3; }
+var PROOF_DUE_DAYS = 10; // proof of deployment photo is due 10 days after Delivered
+function proofGrace(){ return PROOF_DUE_DAYS; }
 function isDeployed(r){ const p = proofOf(r); return !!(r && r.status==='delivered' && p && (p.status==='for_review' || p.status==='verified')); }
 function daysSinceDate(d){ return Math.max(0, Math.round((new Date(todayStr()) - new Date(String(d).slice(0,10)))/86400000)); }
 // Delivered more than the grace days ago, and still no accepted proof.
@@ -2264,7 +2298,8 @@ function proofChipHtml(r){
   if(p && p.status==='rejected') return `<span class="badge expired">Proof rejected — upload again</span>`;
   if(!r.dateDelivered || String(r.dateDelivered) < proofStartDate()) return `<span class="cell-sub">No proof (delivered before proof tracking)</span>`;
   const d = daysSinceDate(r.dateDelivered);
-  return `<span class="badge ${d>proofGrace()?'expired':'obsolete'}">${icon('camera',11)} No proof yet · ${d===0?'today':d+' day'+(d!==1?'s':'')}</span>`;
+  const left = proofGrace() - d;
+  return `<span class="badge ${d>proofGrace()?'expired':'obsolete'}">${icon('camera',11)} No proof yet · ${left<0 ? (-left)+' day'+(left!==-1?'s':'')+' overdue' : (left===0 ? 'due today' : 'due in '+left+' day'+(left!==1?'s':''))}</span>`;
 }
 function fmtDT(v){ if(!v) return ''; const d = new Date(v); if(isNaN(d) || !/T\d{2}:\d{2}.*Z$/.test(String(v))) return String(v).replace('T',' ').slice(0,16); return pkFmtStamp(d); }
 function proofStatusLabel(r){
@@ -2280,7 +2315,7 @@ function openProofUploadModal(reqId){
     .sort((a,b)=>(a.id===reqId?-1:b.id===reqId?1:String(b.dateDelivered).localeCompare(String(a.dateDelivered))));
   const st = {pick:{[reqId]:true}, infos:[], gps:null, gpsState:'loading', busy:false};
   openModal(`${icon('camera',16)} Proof of Deployment`, `
-    <p class="login-note" style="margin-top:0;">Upload 1–3 photos of the POSM <b>installed at the store</b>. The request #, store, date/time and GPS are printed on each photo. A photo already used for another request is refused.</p>
+    <p class="login-note" style="margin-top:0;">Take as many photos as needed of the POSM <b>installed at the store</b>. The request #, store, date/time and GPS are printed on each photo. A photo already used for another request is refused.</p>
     <div class="field"><label>Store</label><div style="font-weight:700;">${escHtml(r0.store)}</div></div>
     <div class="field"><label>Requests this proof covers</label><div id="puItems" class="table-wrap scroll-y" style="max-height:170px;"></div></div>
     <div class="field"><label>Photos</label><div id="puShots"></div></div>
@@ -2301,9 +2336,9 @@ function openProofUploadModal(reqId){
   }
   function draw(){
     const flags = st.infos.length ? pkFlags(st.infos, st.gps, earliest()).filter(f=>f!=='no_gps') : [];
-    document.getElementById('puShots').innerHTML = `<div class="proof-shots">${[0,1,2].map(i=>{ const p = st.infos[i];
+    document.getElementById('puShots').innerHTML = `<div class="proof-shots">${Array.from({length: Math.min(PK_MAX_PHOTOS, st.infos.length+1)}, (_,i)=>i).map(i=>{ const p = st.infos[i];
         return p ? `<div class="proof-shot"><img src="${p.thumb}" alt=""><button class="x" data-rm="${i}" type="button">×</button><span class="tag">Camera</span></div>` : `<div class="proof-shot">Photo ${i+1}</div>`; }).join('')}</div>
-      ${st.infos.length<3 ? `<div style="display:flex;gap:8px;margin-top:8px;">
+      ${st.infos.length<PK_MAX_PHOTOS ? `<div class="cell-sub" style="margin-top:6px;">${st.infos.length} photo${st.infos.length!==1?'s':''} taken</div><div style="display:flex;gap:8px;margin-top:8px;">
         <label class="btn primary sm" style="cursor:pointer;">${icon('camera',13)} Take photo<input type="file" accept="image/*" capture="environment" id="puCam" style="display:none;"></label></div>` : ''}
       ${flags.map(f=>`<div class="proof-flag">${icon('alert',13)}<div>${escHtml(pkFlagLabel(f))}</div></div>`).join('')}<div id="puErr"></div>`;
     document.getElementById('puGps').innerHTML = st.gpsState==='loading' ? 'Getting location...' : st.gpsState==='ok'
@@ -2318,7 +2353,7 @@ function openProofUploadModal(reqId){
   }
   async function add(file, gallery){
     if(!file) return;
-    try{ const info = await pkInspect(file); info.gallery = gallery;
+    try{ const info = await pkInspect(file); info.gallery = gallery; pkCheckLive(info);
       if(st.infos.some(x=>x.hash===info.hash)) throw new Error('You already added this same photo.');
       st.infos.push(info); draw();
     }catch(e){ draw(); const el = document.getElementById('puErr'); if(el) el.innerHTML = `<div class="proof-flag" style="background:var(--danger-bg);color:var(--danger);">${escHtml(e.message||'Could not read the photo.')}</div>`; }
@@ -3629,6 +3664,33 @@ function reqExportRow(r){
     'Proof of Deployment':proofStatusLabel(r), 'Proof Uploaded By':(proofOf(r)||{}).uploadedBy||'', 'Proof Uploaded At':fmtDT((proofOf(r)||{}).uploadedAt), 'Proof Warnings':String((proofOf(r)||{}).flags||'').split(',').filter(Boolean).map(pkFlagLabel).join('; ')};
 }
 let reqView = 'board';
+let reqMobileTab = (()=>{ try{ return sessionStorage.getItem('vs_req_mtab') || 'for_sorting'; }catch(e){ return 'for_sorting'; } })();
+function setReqMobileTab(key, keepPlace){
+  reqMobileTab = key; try{ sessionStorage.setItem('vs_req_mtab', key); }catch(e){}
+  document.querySelectorAll('.req-mtabs [data-mtab]').forEach(b=>{ const on = b.dataset.mtab===key; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  document.querySelectorAll('.kanban.m-tabs .kanban-col').forEach(c=>c.classList.toggle('m-on', c.dataset.col===key));
+  const tabs = document.querySelector('.req-mtabs');
+  if(tabs && !keepPlace && getComputedStyle(tabs).display!=='none'){
+    const top = tabs.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(tabs).top)||0);
+    if(window.scrollY > top) window.scrollTo({top, behavior:'smooth'});
+  }
+}
+function wireReqMobileTabs(keys){
+  const tabs = document.querySelector('.req-mtabs'), board = document.querySelector('.kanban.m-tabs');
+  if(!tabs || !board) return;
+  const bar = document.querySelector('.topbar');
+  if(bar) tabs.style.setProperty('--req-tabs-top', Math.round(bar.getBoundingClientRect().height)+'px');
+  tabs.querySelectorAll('[data-mtab]').forEach(b=>b.addEventListener('click', ()=>setReqMobileTab(b.dataset.mtab)));
+  let sx=0, sy=0, tracking=false;
+  board.addEventListener('touchstart', e=>{ const t=e.touches[0]; sx=t.clientX; sy=t.clientY; tracking = !e.target.closest('input,select,textarea,.table-wrap'); }, {passive:true});
+  board.addEventListener('touchend', e=>{
+    if(!tracking) return; tracking=false;
+    const t=e.changedTouches[0], dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy)*1.6) return;   // mostly-horizontal swipes only
+    const i = keys.indexOf(reqMobileTab), j = i + (dx<0 ? 1 : -1);
+    if(j>=0 && j<keys.length) setReqMobileTab(keys[j]);
+  }, {passive:true});
+}
 function renderRequests(){
   const whFilter = currentFilterWarehouse();
   const reqs = DATA.requests.filter(r=> (whFilter==='all'||r.warehouseId===whFilter) && matchesBUFilter(r.posmCode));
@@ -3665,17 +3727,23 @@ function renderRequests(){
 
   if(reqView==='board'){
     document.getElementById('btnNewReq').addEventListener('click', openNewRequestModal);
+    const colItems = {};
+    cols.forEach(c=>{ colItems[c.key] = reqs.filter(r=> c.key==='deployed' ? isDeployed(r) : c.key==='delivered' ? (r.status==='delivered' && !isDeployed(r)) : r.status===c.key).length; });
+    if(!cols.some(c=>c.key===reqMobileTab)) reqMobileTab = 'for_sorting';
     document.getElementById('reqViewRoot').innerHTML = `
-      <div class="kanban">
+      <div class="req-mtabs" role="tablist" aria-label="Request status">${cols.map(c=>`<button type="button" role="tab" data-mtab="${c.key}" class="${c.key===reqMobileTab?'on':''}" aria-selected="${c.key===reqMobileTab}"><b>${colItems[c.key]}</b>${c.label}</button>`).join('')}</div>
+      <div class="kanban m-tabs">
         ${cols.map(c=>{
           const items = reqs.filter(r=> c.key==='deployed' ? isDeployed(r) : c.key==='delivered' ? (r.status==='delivered' && !isDeployed(r)) : r.status===c.key)
             .sort((a,b)=> c.key==='deployed' ? String((proofOf(b)||{}).uploadedAt).localeCompare(String((proofOf(a)||{}).uploadedAt))
               : c.key==='delivered' ? String(b.dateDelivered||'').localeCompare(String(a.dateDelivered||'')) : (c.key==='for_sorting' ? reqArrivalCmp(a,b) : new Date(b.dateCreated)-new Date(a.dateCreated)));
-          return `<div class="kanban-col"><div class="kanban-col-head"><h4><span class="badge ${c.cls}">${c.label}</span></h4><span class="kanban-count">${items.length}</span></div>
+          return `<div class="kanban-col${c.key===reqMobileTab?' m-on':''}" data-col="${c.key}"><div class="kanban-col-head"><h4><span class="badge ${c.cls}">${c.label}</span></h4><span class="kanban-count">${items.length}</span></div>
             <div class="kcol-scroll${c.key==='for_sorting'?' kcol-sorting':''}">${(c.key==='for_sorting' ? sortingByTsHtml(items) : items.slice(0,25).map(reqCardHtml).join('')) || `<div class="empty-state">No requests here.</div>`}</div>
           </div>`;
         }).join('')}
-      </div>`;
+      </div>
+      <div class="req-swipe-hint">Swipe left or right to change status</div>`;
+    wireReqMobileTabs(cols.map(c=>c.key));
     document.querySelectorAll('[data-advance]').forEach(b=>b.addEventListener('click',()=>advanceRequest(b.dataset.advance)));
     loadImagesFor(reqs.filter(r=>r.status==='for_sorting').slice(0,60).map(r=>r.posmCode));
     document.querySelectorAll('[data-proof-up]').forEach(b=>b.addEventListener('click',()=>openProofUploadModal(b.dataset.proofUp)));
@@ -6099,7 +6167,7 @@ function showUpdateBar(){
   document.body.appendChild(bar);
 }
 
-const APP_VERSION = '2026.10.12-v26';
+const APP_VERSION = '2026.10.16-v27';
 function updateVersionInfo(){
   const el = document.getElementById('appVersionInfo'); if(!el) return;
   el.textContent = `Version ${APP_VERSION} · ${isStandalone()?'installed app':'browser'} · ${window.innerWidth}px${(window.__appZoom||1)>1?' · zoom '+window.__appZoom:''}`;
@@ -6143,6 +6211,12 @@ initMobileShell();
         else if(/VS-TS-GRADING/.test(h)) k='scorecard'; else if(/#guides/.test(h)) k='guides'; else if(/CE-VAULT-SYNC/.test(h)) k='home';
       }
       if(k==='proof'){ a.remove(); return; }
+      if(window.__VSV_SINGLE){
+        // One-file version: the hub page switches pages for us.
+        a.setAttribute('href', '#'); a.removeAttribute('target');
+        a.addEventListener('click', function(e){ e.preventDefault(); parent.postMessage({vsvGo: k}, '*'); });
+        return;
+      }
       if(map[k]) a.setAttribute('href', map[k]);
       a.removeAttribute('target');
     });
@@ -6167,7 +6241,10 @@ initMobileShell();
   window.vsvStamp = function(){
     var b = document.getElementById('vsvBadge'); if(!b || !window.__vsvSnapAt) return;
     var d = new Date(window.__vsvSnapAt);
-    b.textContent = 'View only · data as of ' + d.toLocaleString('en-PH', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+    var today = d.toDateString() === new Date().toDateString();
+    var when = today ? d.toLocaleTimeString('en-PH', {hour:'numeric', minute:'2-digit'}) : d.toLocaleString('en-PH', {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+    b.textContent = (window.innerWidth < 700 ? 'View only · ' : 'View only · data as of ') + when;
+    b.title = 'Data as of ' + d.toLocaleString('en-PH');
   };
   new MutationObserver(function(ms){ ms.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType===1) sweep(n); }); }); badge(); })
     .observe(document.documentElement, {childList:true, subtree:true});

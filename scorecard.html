@@ -1435,6 +1435,12 @@ setInterval(autoRefresh,600000);
         else if(/VS-TS-GRADING/.test(h)) k='scorecard'; else if(/#guides/.test(h)) k='guides'; else if(/CE-VAULT-SYNC/.test(h)) k='home';
       }
       if(k==='proof'){ a.remove(); return; }
+      if(window.__VSV_SINGLE){
+        // One-file version: the hub page switches pages for us.
+        a.setAttribute('href', '#'); a.removeAttribute('target');
+        a.addEventListener('click', function(e){ e.preventDefault(); parent.postMessage({vsvGo: k}, '*'); });
+        return;
+      }
       if(map[k]) a.setAttribute('href', map[k]);
       a.removeAttribute('target');
     });

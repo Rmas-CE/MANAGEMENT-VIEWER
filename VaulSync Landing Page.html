@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VaultSync — Smart POSM Inventory Solutions</title>
+<meta name="description" content="VaultSync: POSM inventory, request and scorecard tools, CE merchandising guides and training videos in one place.">
+<!-- Keeps the page out of search results. It does NOT restrict access: anyone with the link can still open it. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0B1B5C">
+<meta property="og:type" content="website">
+<meta property="og:title" content="VaultSync — Smart POSM Inventory Solutions">
+<meta property="og:description" content="POSM tools, merchandising guides and training videos in one place.">
+<meta property="og:url" content="https://rmas-ce.github.io/CE-VAULT-SYNC/">
+<meta property="og:image" content="https://rmas-ce.github.io/CE-VAULT-SYNC/images/og-cover.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+PHRpdGxlPlZhdWx0IFN5bmM8L3RpdGxlPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwIiB5MT0iMCIgeDI9IjAuMzUiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyZDYyZTYiLz48c3RvcCBvZmZzZXQ9IjAuNTUiIHN0b3AtY29sb3I9IiMxYTNmYzQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZjJhOGMiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEwMCIgZmlsbD0idXJsKCNiZykiLz48cmVjdCB4PSI4IiB5PSI4IiB3aWR0aD0iNDk2IiBoZWlnaHQ9IjQ5NiIgcng9IjkzIiBmaWxsPSJub25lIiBzdHJva2U9IiM2Zjk2ZmYiIHN0cm9rZS1vcGFjaXR5PSIwLjUiIHN0cm9rZS13aWR0aD0iNSIvPjxyZWN0IHg9Ijg4IiB5PSI5NiIgd2lkdGg9IjMzNiIgaGVpZ2h0PSIzMjAiIHJ4PSIzNCIgZmlsbD0iIzRkN2NmMCIgZmlsbC1vcGFjaXR5PSIwLjMiIHN0cm9rZT0iI2M5ZGJmZiIgc3Ryb2tlLXdpZHRoPSIyNiIvPjxnIHN0cm9rZT0iI2M5ZGJmZiIgc3Ryb2tlLXdpZHRoPSIyNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj48cGF0aCBkPSJNNjQsMTc2IGgzMCBNNjQsMzM2IGgzMCIvPjwvZz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNTYsMjU2KSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZTNlZWZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0tMTAwLC0zNiBBMTA2LDEwNiAwIDAgMSA5MiwtNTMgTTU1LC02OCBMOTIsLTUzIEw5OCwtOTMiLz48cGF0aCBkPSJNMTAwLDM2IEExMDYsMTA2IDAgMCAxIC05Miw1MyBNLTU1LDY4IEwtOTIsNTMgTC05OCw5MyIvPjwvZz48Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjMwIiBmaWxsPSIjZTlmMmZmIi8+PC9zdmc+">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Poppins:wght@700;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   VaultSync — design tokens aligned with NEXUS HUB v4
+   Samsung blue is a brand accent (cover, logo); neutral surfaces carry the
+   content; one functional accent for links, primary buttons and focus.
+   ===================================================================== */
+:root{
+  --sam-blue:#1428A0; --sam-blue-dark:#0B1B5C; --sam-navy:#000000;
+  --accent:#2A5FD9; --accent-dark:#1E48AE;
+  --g1:#F3F4F6; --g2:#E3E6EB; --g3:#C4C9D2; --surface:#FFFFFF;
+  --ink:#12141A; --ink-soft:#5B6270;
+  --info:#1E4FA6; --info-bg:#E7EEFB;
+  --cover-ink:#C7CDEE; --cover-faint:#8892C4;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(15,20,30,.05),0 4px 16px rgba(15,20,30,.06);
+  --font-ui:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-head:'Poppins','Inter',-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-ui);color:var(--ink);background:var(--g1);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{font-family:var(--font-head);font-weight:700}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.cover :focus-visible{outline-color:#7FD8FF}
+.skip{position:absolute;left:-999px;top:8px;z-index:100;background:#fff;color:var(--ink);padding:8px 14px;border-radius:8px;font-weight:600}
+.skip:focus{left:8px}
+
+/* ===== Cover (tool picker) ===== */
+.cover{background:linear-gradient(160deg,var(--sam-navy) 0%,var(--sam-blue-dark) 55%,var(--sam-blue) 100%);color:#fff;padding:20px 24px 40px}
+.topbar{max-width:1080px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.topbar .org{font-size:12px;color:var(--cover-faint);font-weight:600}
+.topbar nav{display:flex;gap:4px}
+.topbar nav a{font-size:13px;font-weight:600;color:var(--cover-ink);padding:10px 12px;border-radius:8px}
+.topbar nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.lockup{display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:28px}
+.lockrow{display:flex;align-items:center;gap:14px}
+.vs-icon{width:60px;height:60px;flex:none;border-radius:13px;filter:drop-shadow(0 8px 22px rgba(0,0,0,.35))}
+.wordmark{font-family:var(--font-head);font-weight:800;font-size:clamp(34px,5vw,46px);letter-spacing:-.01em;line-height:1}
+.wordmark b{font-weight:800;background:linear-gradient(160deg,#7FD8FF 0%,var(--accent) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tagline{font-size:12.5px;letter-spacing:.16em;color:var(--cover-ink);font-weight:700;margin-top:12px;text-transform:uppercase}
+.divider{width:44px;height:3px;background:linear-gradient(90deg,var(--accent),#7FD8FF);border-radius:2px;margin:13px auto 18px}
+.lead{color:var(--cover-ink);font-size:15px;max-width:540px}
+.choose{font-family:var(--font-head);font-size:14px;font-weight:700;margin:26px 0 12px;text-align:center}
+.tools{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.tool{display:flex;flex-direction:column;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:20px 18px;color:#fff;transition:transform .15s ease,background .15s ease,border-color .15s ease}
+.tool:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35);transform:translateY(-3px)}
+.tool .ic{width:34px;height:34px;margin-bottom:12px}
+.tool .tx{flex:1;display:flex;flex-direction:column}
+.tool h3{font-size:16px;margin-bottom:5px}
+.tool p{font-size:12.5px;color:var(--cover-ink);flex:1}
+.tool .go{margin-top:14px;font-size:12.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.soon{display:flex;justify-content:center;gap:10px;margin-top:14px;flex-wrap:wrap}
+.soon span{font-size:12px;color:var(--cover-ink);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:7px 14px;display:flex;gap:8px;align-items:center}
+.soon i{font-style:normal;font-size:10.5px;font-weight:700;padding:1px 8px;border-radius:20px;background:rgba(255,255,255,.12)}
+
+/* ===== Content ===== */
+main{max-width:1080px;margin:0 auto;padding:30px 24px 8px}
+.sec{margin-bottom:28px;scroll-margin-top:16px}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.sec-head h2{font-size:19px}
+.sec-head p{color:var(--ink-soft);font-size:13px}
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--g2);margin-bottom:12px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:none;border:0;padding:12px 14px;font-size:13px;font-weight:600;color:var(--ink-soft);border-bottom:2.5px solid transparent;white-space:nowrap;min-height:44px}
+.tab:hover{color:var(--ink)}
+.tab[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
+.tab .n{font-size:11px;color:var(--ink-soft);margin-left:4px;font-weight:600}
+.tab[aria-pressed="true"] .n{color:var(--accent)}
+.row{display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--g2)}
+.row:last-child{border-bottom:0}
+.thumb{width:52px;height:38px;border-radius:5px;background:#0b1a3a center/cover no-repeat;border:1px solid var(--g2)}
+.thumb.portrait{background-size:contain;background-color:#eef3fa}
+.r-title{font-weight:600;font-size:13.5px;line-height:1.3}
+.r-meta{font-size:12px;color:var(--ink-soft);margin-top:3px;display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-block;padding:1.5px 8px;border-radius:20px;font-size:10.5px;font-weight:700;line-height:1.5}
+.pill.new{background:var(--info-bg);color:var(--info)}
+.pill.bu{background:var(--g1);color:var(--ink-soft)}
+.r-act{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;font-weight:700;border-radius:7px;padding:9px 14px;min-height:40px;border:1px solid var(--g2);background:#fff;color:var(--ink);white-space:nowrap}
+.btn:hover{border-color:var(--g3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-dark);border-color:var(--accent-dark)}
+.btn svg{width:15px;height:15px}
+.fold{display:flex;width:100%;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border:0;border-top:1px solid var(--g2);background:#FAFBFC;color:var(--ink-soft);font-size:13px;font-weight:600;text-align:left;min-height:46px}
+.fold:hover{color:var(--ink)}
+.fold:last-child{border-radius:0 0 var(--radius) var(--radius)}
+.fold .chev{transition:transform .2s;flex:none}
+.fold[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.prev-list{border-top:1px solid var(--g2)}
+.prev-list .row{background:#FCFCFD}
+.prev-list .thumb{filter:grayscale(.4);opacity:.85}
+.empty{padding:22px 16px;color:var(--ink-soft);font-size:13px;text-align:center}
+
+/* Tutorials */
+.tut-toggle{display:flex;width:100%;align-items:center;gap:14px;padding:14px 16px;border:0;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);text-align:left;min-height:56px;color:var(--ink)}
+.tut-toggle[aria-expanded="true"]{border-radius:var(--radius) var(--radius) 0 0;border-bottom:1px solid var(--g2)}
+.tut-toggle .ico{width:36px;height:36px;border-radius:9px;background:var(--info-bg);color:var(--info);display:grid;place-items:center;flex:none}
+.tut-toggle .t1{font-family:var(--font-head);font-weight:700;font-size:15px}
+.tut-toggle .t2{font-size:12.5px;color:var(--ink-soft)}
+.tut-toggle .chev{margin-left:auto;color:var(--ink-soft);transition:transform .2s;flex:none}
+.tut-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.tut-wrap{background:#fff;border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow);padding:16px}
+.vids{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.vid{display:flex;flex-direction:column;border:1px solid var(--g2);border-radius:var(--radius);overflow:hidden;background:#fff;padding:0;text-align:left;color:inherit}
+.vid:hover{border-color:var(--g3)}
+.vth{position:relative;display:grid;place-items:center;aspect-ratio:16/9;background:#0b1a3a center/cover no-repeat}
+.vth .pb{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;color:var(--ink);box-shadow:0 6px 18px rgba(0,0,0,.3)}
+.vth .dur{position:absolute;right:8px;bottom:8px;background:rgba(10,14,30,.82);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px}
+.vb{display:block;padding:12px 14px 14px}
+.vb .vt{display:block;font-size:14px;font-weight:600}
+.vb .vd{display:block;font-size:12px;color:var(--ink-soft);margin-top:3px}
+
+/* Video modal */
+.modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(10,14,39,.86)}
+.modal.open{display:flex}
+.mbox{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:100%}
+.mbox video{display:block;max-width:min(1100px,100%);max-height:calc(100vh - 120px);border-radius:12px;background:#000}
+.mbox h4{margin:0;color:#fff;font-size:14px;font-weight:600;text-align:center}
+.mclose{position:fixed;top:14px;right:14px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(10,14,39,.6);color:#fff;font-size:22px;line-height:1}
+
+footer{max-width:1080px;margin:0 auto;padding:18px 24px 30px;border-top:1px solid var(--g2);display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;color:var(--ink-soft);font-size:12px}
+footer .ver{color:var(--ink-soft);opacity:.8}
+
+/* ===== Tablet / phone ===== */
+@media (max-width:1100px){ .tools{grid-template-columns:repeat(3,1fr)} }
+@media (max-width:900px){ .tools{grid-template-columns:repeat(2,1fr)} }
+@media (max-width:600px){
+  .cover{padding:14px 16px 32px}
+  .topbar nav{display:none}
+  .lockup{margin-top:20px}
+  .vs-icon{width:46px;height:46px}
+  .tagline{font-size:10.5px;letter-spacing:.12em}
+  .lead{font-size:14px}
+  .choose{margin:20px 0 10px}
+  .tools{grid-template-columns:1fr;gap:10px}
+  .tool{flex-direction:row;align-items:center;gap:14px;padding:14px;min-height:64px}
+  .tool:hover{transform:none}
+  .tool .ic{margin:0;width:28px;height:28px;flex:none}
+  .tool p{font-size:12px}
+  .tool .go{margin:0}
+  .tool .go .lbl{display:none}
+  main{padding:24px 16px 6px}
+  .row{grid-template-columns:42px 1fr auto;gap:12px;padding:12px 14px}
+  .thumb{width:42px;height:32px}
+  .r-act{gap:6px}
+  .r-act .btn{padding:9px 11px}
+  .r-act .btn .lbl-dl{display:none}
+  .vids{grid-template-columns:1fr;gap:10px}
+  .vid{display:grid;grid-template-columns:128px 1fr}
+  .vth{aspect-ratio:auto;min-height:84px}
+  .vth .pb{width:36px;height:36px}
+  footer{padding:16px 16px 28px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+<style>
+.vsv-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:700 11.5px/1.2 Inter,system-ui,sans-serif;
+  letter-spacing:.02em;background:#FFF4D6;color:#7A4B00;border:1px solid #F0D18A;white-space:nowrap}
+.vsv-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:#D99A06}
+.vsv-top{position:fixed;bottom:14px;right:14px;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,.18)}</style></head>
+<body>
+<span class="vsv-badge vsv-top">Management view · read only</span>
+<a class="skip" href="#main">Skip to content</a>
+
+
+<header class="cover" id="top">
+  <div class="topbar">
+    <span class="org">Project Collaboration: SEPCO + RMAS</span>
+    <nav aria-label="Sections"><a href="#guides">Merch Guides</a><a href="#tutorials">Tutorials</a></nav>
+  </div>
+  <div class="lockup">
+    <div class="lockrow">
+      <img class="vs-icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI+PHRpdGxlPlZhdWx0IFN5bmM8L3RpdGxlPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwIiB5MT0iMCIgeDI9IjAuMzUiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyZDYyZTYiLz48c3RvcCBvZmZzZXQ9IjAuNTUiIHN0b3AtY29sb3I9IiMxYTNmYzQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZjJhOGMiLz48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBpZD0icmltIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNmY5NmZmIiBzdG9wLW9wYWNpdHk9IjAuNTUiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMyYTRmYzkiIHN0b3Atb3BhY2l0eT0iMC41Ii8+PC9saW5lYXJHcmFkaWVudD48ZmlsdGVyIGlkPSJiaWdnbG93IiB4PSItMTAwJSIgeT0iLTEwMCUiIHdpZHRoPSIzMDAlIiBoZWlnaHQ9IjMwMCUiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjciIHJlc3VsdD0iYiIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0iYiIvPjxmZU1lcmdlTm9kZSBpbj0iYiIvPjxmZU1lcmdlTm9kZSBpbj0iU291cmNlR3JhcGhpYyIvPjwvZmVNZXJnZT48L2ZpbHRlcj48L2RlZnM+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIHJ4PSIxMDAiIGZpbGw9InVybCgjYmcpIi8+PHJlY3QgeD0iOCIgeT0iOCIgd2lkdGg9IjQ5NiIgaGVpZ2h0PSI0OTYiIHJ4PSI5MyIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI3JpbSkiIHN0cm9rZS13aWR0aD0iNSIvPjxkZWZzPjxmaWx0ZXIgaWQ9Imdsb3dMIiBmaWx0ZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii02MDAiIHk9Ii02MDAiIHdpZHRoPSIxNDAwIiBoZWlnaHQ9IjE0MDAiPjxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjQiIHJlc3VsdD0iYiIvPjxmZU1lcmdlPjxmZU1lcmdlTm9kZSBpbj0iYiIvPjxmZU1lcmdlTm9kZSBpbj0iU291cmNlR3JhcGhpYyIvPjwvZmVNZXJnZT48L2ZpbHRlcj48cmFkaWFsR3JhZGllbnQgaWQ9InNwaWxsIiBjeD0iMC41IiBjeT0iMC41IiByPSIwLjYiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2JmZTJmZiIgc3RvcC1vcGFjaXR5PSIwLjU1Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYmZlMmZmIiBzdG9wLW9wYWNpdHk9IjAiLz48L3JhZGlhbEdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSI0OCIgeT0iOTYiIHdpZHRoPSIzMTQiIGhlaWdodD0iMzMwIiByeD0iMjIiIGZpbGw9IiM0ZDdjZjAiIGZpbGwtb3BhY2l0eT0iMC4zIiBzdHJva2U9IiNjOWRiZmYiIHN0cm9rZS13aWR0aD0iOCIvPjxyZWN0IHg9IjcyIiB5PSIxMjAiIHdpZHRoPSIyNjYiIGhlaWdodD0iMjgyIiByeD0iMTAiIGZpbGw9IiMwZjJhOGMiIGZpbGwtb3BhY2l0eT0iMC4zNSIgc3Ryb2tlPSIjYTljNGZmIiBzdHJva2Utd2lkdGg9IjMiLz48cmVjdCB4PSI3MiIgeT0iMTIwIiB3aWR0aD0iMjY2IiBoZWlnaHQ9IjI4MiIgcng9IjEwIiBmaWxsPSJ1cmwoI3NwaWxsKSIgb3BhY2l0eT0iMC4zIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjZzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgdmFsdWVzPSIwLjM7MC4zOzE7MTswLjM7MC4zIiBrZXlUaW1lcz0iMDswLjI2OzAuMzQ7MC44MjswLjkyOzEiLz48L3JlY3Q+PHBhdGggZD0iTTcyLDIxOCBIMzM4IE03MiwzMTQgSDMzOCIgc3Ryb2tlPSIjYzlkYmZmIiBzdHJva2Utd2lkdGg9IjYiLz48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNlM2VlZmYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjZzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgdmFsdWVzPSIwLjU1OzAuNTU7MTsxOzAuNTU7MC41NSIga2V5VGltZXM9IjA7MC4zMDswLjM2OzAuODI7MC45MjsxIi8+PHJlY3QgeD0iOTIiIHk9IjEzNCIgd2lkdGg9IjQ0IiBoZWlnaHQ9IjY2IiByeD0iNCIgZmlsbD0iIzdmYTZmZiIgZmlsbC1vcGFjaXR5PSIwLjM1Ii8+PHBhdGggZD0iTTEwMCwyMDAgTDk0LDIxNCBNMTI4LDIwMCBMMTM0LDIxNCBNMTAwLDE1MiBIMTI4IE0xMDAsMTY2IEgxMjIiLz48Y2lyY2xlIGN4PSIxNzgiIGN5PSIxNTgiIHI9IjIwIiBmaWxsPSIjN2ZhNmZmIiBmaWxsLW9wYWNpdHk9IjAuMzUiLz48cGF0aCBkPSJNMTc4LDE3OCBWMjE0IE0xNjgsMTU4IGgyMCIvPjwvZz48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNlM2VlZmYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InRyYW5zbGF0ZSIgZHVyPSI2cyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIHZhbHVlcz0iMCAwOzAgMDsxNTAgMDsxNTAgMDswIDA7MCAwIiBrZXlUaW1lcz0iMDswLjMwOzAuNDY7MC45MDswLjkwMTsxIiBjYWxjTW9kZT0ic3BsaW5lIiBrZXlTcGxpbmVzPSIwIDAgMSAxOzAuNSAwIDAuOSAwLjY7MCAwIDEgMTswIDAgMSAxOzAgMCAxIDEiLz48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjZzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgdmFsdWVzPSIxOzE7MDswOzA7MSIga2V5VGltZXM9IjA7MC4zNjswLjQ2OzAuOTA7MC45MzsxIi8+PHJlY3QgeD0iMjE2IiB5PSIxODYiIHdpZHRoPSIxMDQiIGhlaWdodD0iMjYiIHJ4PSIxMyIgZmlsbD0iIzdmYTZmZiIgZmlsbC1vcGFjaXR5PSIwLjM1Ii8+PGVsbGlwc2UgY3g9IjMwNyIgY3k9IjE5OSIgcng9IjciIHJ5PSIxMyIvPjwvZz48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNlM2VlZmYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjZzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgdmFsdWVzPSIwLjU1OzAuNTU7MTsxOzAuNTU7MC41NSIga2V5VGltZXM9IjA7MC40MDswLjQ2OzAuODI7MC45MjsxIi8+PHJlY3QgeD0iOTIiIHk9IjIzNiIgd2lkdGg9IjI2IiBoZWlnaHQ9IjcyIiByeD0iMyIgZmlsbD0iIzdmYTZmZiIgZmlsbC1vcGFjaXR5PSIwLjM1Ii8+PHJlY3QgeD0iMTIyIiB5PSIyNDQiIHdpZHRoPSIyNiIgaGVpZ2h0PSI2NCIgcng9IjMiIGZpbGw9IiM3ZmE2ZmYiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPjxwYXRoIGQ9Ik0xNTQsMjUyIEwxNzgsMjQ0IEwxOTYsMzA2IEwxNzIsMzEyIFoiIGZpbGw9IiM3ZmE2ZmYiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPjxwYXRoIGQ9Ik0yMTYsMjY4IGgxMDQgdjQwIGgtMTA0IFoiIGZpbGw9IiM3ZmE2ZmYiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPjxwYXRoIGQ9Ik0yMjYsMjgwIGg1OCBNMjI2LDI5NCBoNDAiLz48cGF0aCBkPSJNMzA0LDI2OCB2MTggbDYsLTUgbDYsNSB2LTE4IiBzdHJva2Utd2lkdGg9IjMuNSIvPjwvZz48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNlM2VlZmYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjZzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgdmFsdWVzPSIwLjU1OzAuNTU7MTsxOzAuNTU7MC41NSIga2V5VGltZXM9IjA7MC41MDswLjU2OzAuODI7MC45MjsxIi8+PHBhdGggZD0iTTkyLDM4OCBoODAgTTk2LDM3NiBoNzIgTTEwMCwzNjQgaDY0IiAvPjxwYXRoIGQ9Ik0xODYsMzg4IEwyMTIsMzM2IEwyMzgsMzg4IFoiIGZpbGw9IiM3ZmE2ZmYiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPjxwYXRoIGQ9Ik0xOTksMzcyIGgyNiIvPjxwYXRoIGQ9Ik0yNjgsMzIyIFYzNDAiIHN0cm9rZS13aWR0aD0iMy41Ii8+PHJlY3QgeD0iMjUyIiB5PSIzNDAiIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MiIgcng9IjUiIGZpbGw9IiM3ZmE2ZmYiIGZpbGwtb3BhY2l0eT0iMC4zNSIvPjxwYXRoIGQ9Ik0yNjAsMzU0IGgxNiIvPjwvZz48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNlM2VlZmYiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBvcGFjaXR5PSIxIj48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InRyYW5zbGF0ZSIgZHVyPSI2cyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIHZhbHVlcz0iMCAtMTg7MCAtMTg7MCAwOzAgMCIga2V5VGltZXM9IjA7MC41MjswLjYyOzEiIGNhbGNNb2RlPSJzcGxpbmUiIGtleVNwbGluZXM9IjAgMCAxIDE7MC4yIDAuNyAwLjMgMTswIDAgMSAxIi8+PGFuaW1hdGUgYXR0cmlidXRlTmFtZT0ib3BhY2l0eSIgZHVyPSI2cyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIHZhbHVlcz0iMDswOzE7MTswOzAiIGtleVRpbWVzPSIwOzAuNTI7MC42MDswLjg4OzAuOTY7MSIvPjxyZWN0IHg9IjMwMiIgeT0iMzI0IiB3aWR0aD0iMjgiIGhlaWdodD0iNTAiIHJ4PSIzIiBmaWxsPSIjYmZlMmZmIiBmaWxsLW9wYWNpdHk9IjAuNDUiLz48cGF0aCBkPSJNMzA4LDM3NCBMMzA0LDM4OCBNMzI0LDM3NCBMMzI4LDM4OCBNMzA4LDMzOCBIMzI0IE0zMDgsMzUwIEgzMjAiLz48L2c+PGNpcmNsZSBjeD0iMzE2IiBjeT0iMzU2IiByPSIzMCIgZmlsbD0idXJsKCNzcGlsbCkiIG9wYWNpdHk9IjAiPjxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9Im9wYWNpdHkiIGR1cj0iNnMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiB2YWx1ZXM9IjA7MDswLjk7MDswIiBrZXlUaW1lcz0iMDswLjU0OzAuNjA7MC43MjsxIi8+PC9jaXJjbGU+PHBhdGggZD0iTTM2MiwxMTIgTDQ2Niw4OCBMNDY2LDQzNiBMMzYyLDQxMCBaIiBmaWxsPSIjM2Y2Y2U2IiBmaWxsLW9wYWNpdHk9IjAuNSIgc3Ryb2tlPSIjYzlkYmZmIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48ZyBzdHJva2U9IiNjOWRiZmYiIHN0cm9rZS13aWR0aD0iOSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj48cGF0aCBkPSJNMzUyLDE2MCBoMTQgTTM1MiwyNjIgaDE0IE0zNTIsMzY0IGgxNCIvPjwvZz48ZyBmaWxsPSIjZTlmMmZmIj48Y2lyY2xlIGN4PSI0NTIiIGN5PSIxMTgiIHI9IjUiLz48Y2lyY2xlIGN4PSI0NTIiIGN5PSI0MDYiIHI9IjUiLz48Y2lyY2xlIGN4PSIzNzQiIGN5PSIxMzQiIHI9IjQiLz48Y2lyY2xlIGN4PSIzNzQiIGN5PSIzOTAiIHI9IjQiLz48L2c+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNDEzLDI2Mikgc2NhbGUoMC42MiwxKSI+PGNpcmNsZSByPSI3MCIgZmlsbD0iIzNiNmVmMCIgZmlsbC1vcGFjaXR5PSIwLjM1Ii8+PGc+PGFuaW1hdGVUcmFuc2Zvcm0gYXR0cmlidXRlTmFtZT0idHJhbnNmb3JtIiB0eXBlPSJyb3RhdGUiIGR1cj0iNnMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiB2YWx1ZXM9IjA7MDszNjA7MzYwIiBrZXlUaW1lcz0iMDswLjA0OzAuMjg7MSIgY2FsY01vZGU9InNwbGluZSIga2V5U3BsaW5lcz0iMCAwIDEgMTswLjQ1IDAgMC4zIDE7MCAwIDEgMSIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2UzZWVmZiIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGZpbHRlcj0idXJsKCNnbG93TCkiPjxwYXRoIGQ9Ik0tNTAuNywtMTguNSBBNTQsNTQgMCAwIDEgNDYuOCwtMjcuMCBNMjcuNywtMzQuNSBMNDYuOCwtMjcuMCBMNDkuOSwtNDcuMyIvPjxwYXRoIGQ9Ik01MC43LDE4LjUgQTU0LDU0IDAgMCAxIC00Ni44LDI3LjAgTS0yNy43LDM0LjUgTC00Ni44LDI3LjAgTC00OS45LDQ3LjMiLz48L2c+PGcgc3Ryb2tlPSIjYzlkYmZmIiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTAsLTM4IFYzOCBNLTMzLC0xOSBMMzMsMTkgTS0zMywxOSBMMzMsLTE5Ii8+PC9nPjwvZz48Y2lyY2xlIHI9IjE0IiBmaWxsPSIjM2I2ZWYwIiBzdHJva2U9IiNlOWYyZmYiIHN0cm9rZS13aWR0aD0iNSIvPjxjaXJjbGUgcj0iNiIgZmlsbD0iI2ZmZiIgZmlsdGVyPSJ1cmwoI2JpZ2dsb3cpIi8+PC9nPjwvc3ZnPg==" alt="" width="60" height="60">
+      <h1 class="wordmark">Vault<b>Sync</b></h1>
+    </div>
+    <div class="tagline">Smart POSM Inventory Solutions</div>
+    <div class="divider" aria-hidden="true"></div>
+    <p class="lead">Manage POSM stock, requests and store execution — plus the latest merchandising guides — in one place.</p>
+  </div>
+  <h2 class="choose" id="tools">Choose a tool</h2>
+  <div class="tools" id="toolGrid"></div>
+  <div class="soon" id="soonList"></div>
+</header>
+
+<main id="main">
+  <section class="sec" id="guides" aria-labelledby="guidesTitle">
+    <div class="sec-head">
+      <h2 id="guidesTitle">Merchandising Guides</h2>
+      <p id="guidesSub"></p>
+    </div>
+    <div class="tabs" id="guideTabs" role="group" aria-label="Filter guides by business unit"></div>
+    <div class="card" id="guideCard"></div>
+  </section>
+
+  <section class="sec" id="tutorials" aria-label="Tutorials">
+    <button class="tut-toggle" id="tutToggle" type="button" aria-expanded="false" aria-controls="tutWrap">
+      <span class="ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+      <span><span class="t1">Tutorials</span><br><span class="t2" id="tutSummary"></span></span>
+      <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="tut-wrap" id="tutWrap" hidden><div class="vids" id="vidGrid"></div></div>
+  </section>
+</main>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="mbox">
+    <button class="mclose" id="mClose" type="button" aria-label="Close video">×</button>
+    <video id="player" controls playsinline preload="metadata"></video>
+    <h4 id="mTitle"></h4>
+  </div>
+</div>
+
+<footer>
+  <span>VaultSync · Project Collaboration: SEPCO + RMAS</span>
+  <span id="footMeta"></span>
+</footer>
+
+<script>
+/* =====================================================================
+   VAULTSYNC DATA — the only part you normally edit.
+   Counts, tabs, "New" sorting and "Previous editions" are worked out
+   from these lists automatically.
+   ===================================================================== */
+const SITE = {
+  updated: "Oct 9, 2026",   // ← change whenever you update guides or tools
+  version: "v2.0.2"
+};
+
+/* status: "live" (card opens url) · "soon" (shown as a Coming soon chip)
+   external: true → link leaves VaultSync (e.g. Google Drive); shows ↗ */
+const VB = location.href.split(/[?#]/)[0].replace(/[^\/]*$/, '');
+const TOOLS = [
+  {name:"POSM Inventory",      desc:"Warehouse stock, stock in/out log, metrics — view only",   icon:"box",   status:"live", url: VB+"inventory.html"},
+  {name:"POSM Requests",       desc:"For Sorting, For Delivery, Delivered and proof — view only", icon:"store", status:"live", url: VB+"inventory.html#requests"},
+  {name:"TS Scorecard",        desc:"Trade Supervisor KPI grades — view only",                   icon:"chart", status:"live", url: VB+"scorecard.html"},
+  {name:"Execution Analytics", desc:"SPOP, TV BG and SB compliance · Google Drive",              icon:"pie",   status:"live", external:true, url:"https://drive.google.com/drive/folders/1NQLRVrS4uuNL1zwDpdtPzVKTjHJ8dwhy"}
+];
+
+/* bu: "CE" | "AV" | "HA" | "AC"  (official BUs; CE = guidelines for all BUs)
+   isNew: true → "New" tag and sorted to the top
+   previous: true → moved under "Previous editions" (also automatic once validTo has passed)
+   validTo: "YYYY-MM-DD" (optional) · sizeMB is shown so people on mobile data know */
+const GUIDES = [
+  {title:"CE Merchandising Guidelines 2026",              bu:"CE", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ce-merch-guidelines-2026.pdf",        cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ce-merch-guidelines-2026.jpg",        pages:10, sizeMB:3.4, isNew:true, portrait:true, note:"Updated Aug 6, 2026"},
+  {title:"TV, Sound Device & Display POSM Guide 2026",    bu:"AV", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/tv-sd-ds-merch-guide-2026.pdf",        cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/tv-sd-ds-merch-guide-2026.jpg",        pages:43, sizeMB:6.5, note:"5th version"},
+  {title:"Refrigerator Guide 2026 — Nationwide",          bu:"HA", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ref-merch-guide-2026-nationwide.pdf", cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ref-merch-guide-2026-nationwide.jpg", pages:28, sizeMB:3.5, validTo:"2026-12-31"},
+  {title:"Refrigerator Guide 2026 — Nationwide & SM",     bu:"HA", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ref-merch-guide-2026-sm.pdf",         cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ref-merch-guide-2026-sm.jpg",         pages:30, sizeMB:3.7},
+  {title:"Washing Machine Guide 2026 — WD10 & WA40",      bu:"HA", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-2026-wd10-wa40.pdf",               cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-2026-wd10-wa40.jpg",               pages:3,  sizeMB:0.4, isNew:true},
+  {title:"Washing Machine Guide 2026 — WA80F Nationwide", bu:"HA", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-wa80f-nationwide.pdf",             cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-wa80f-nationwide.jpg",             pages:2,  sizeMB:0.1},
+  {title:"Window-Type AC POSM Guide 2026",                bu:"AC", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ac-window-type-2026.pdf",             cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ac-window-type-2026.jpg",             pages:10, sizeMB:1.4},
+  {title:"TV & Sound Device Retail Merch Guide 2025",     bu:"AV", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/tv-sd-merch-guide-2025.pdf",          cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/tv-sd-merch-guide-2025.jpg",          pages:48, sizeMB:9.2, previous:true, short:"2025 TV & SD"},
+  {title:"WindFree 1Way Cassette POSM Guide 2025",        bu:"AC", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ac-windfree-1way-2025.pdf",           cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/ac-windfree-1way-2025.jpg",           pages:9,  sizeMB:1.3, previous:true, short:"2025 WindFree"},
+  {title:"Bespoke AI Laundry Merch Guide 2024",           bu:"HA", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-bespoke-ai-laundry-2024.pdf",      cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-bespoke-ai-laundry-2024.jpg",      pages:7,  sizeMB:0.8, previous:true, short:"2024 Bespoke AI Laundry"}
+];
+
+const VIDEOS = [
+  {title:"How to install",          desc:"Add the tools to your phone — Android and iPhone", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/how-to-install.mp4",          poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/how-to-install.jpg",          dur:"1:19"},
+  {title:"Using in a browser",      desc:"Chrome or Edge on a computer",                     file:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/using-in-browser.mp4",        poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/using-in-browser.jpg",        dur:"2:44"},
+  {title:"Inventory tool training", desc:"Stock, requests, transfers and reports",           file:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/inventory-tool-training.mp4", poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/inventory-tool-training.jpg", dur:"8:14"}
+];
+
+/* =====================================================================
+   PAGE LOGIC — no need to edit below this line
+   ===================================================================== */
+const BU_ORDER = ["CE","AV","HA","AC"];
+const PREVIEW_COUNT = 3;              // guides shown under "All" before "Show all"
+const STORE_KEY = "vaultsync.ui.v2";
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ICONS = {
+  box:'<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/>',
+  store:'<path d="M4 10v10h16V10"/><path d="M3 5h18l-1 5a2.5 2.5 0 0 1-5 0 2.5 2.5 0 0 1-5 0 2.5 2.5 0 0 1-5 0z"/><path d="M10 20v-5h4v5"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4V8Z"/><circle cx="12" cy="13" r="3.5"/>',
+  pie:'<circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4"/>',
+  exec:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8.5 10l1.5 1.5 3-3M8.5 16l1.5 1.5 3-3"/>'
+};
+const svg = (paths, size=24, sw=1.6, cls='') => `<svg${cls?` class="${cls}"`:''} width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const CHEV = svg('<path d="M6 9l6 6 6-6"/>', 18, 2, 'chev');
+const DL = svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>', 15, 2);
+
+/* remembered UI state — per visitor, this browser only; works even if storage is blocked */
+const ui = (()=>{ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; } })();
+const saveUI = ()=>{ try{ localStorage.setItem(STORE_KEY, JSON.stringify(ui)); }catch(e){} };
+
+/* ---------- tools ---------- */
+(function renderTools(){
+  const grid = document.getElementById('toolGrid');
+  TOOLS.filter(t=>t.status==='live' && t.url).forEach(t=>{
+    const a = document.createElement('a');
+    // VaultSync tools open in the same tab (each has the VaultSync bar to come back here);
+    // outside links such as Google Drive open in a new tab.
+    a.className = 'tool'; a.href = t.url;
+    if(t.external){ a.target = '_blank'; a.rel = 'noopener'; }
+    a.setAttribute('aria-label', `${t.name}: ${t.desc}${t.external ? ' (opens in a new tab)' : ''}`);
+    a.innerHTML = `<span class="ic">${svg(ICONS[t.icon]||ICONS.box, 34)}</span>
+      <span class="tx"><h3>${esc(t.name)}</h3><p>${esc(t.desc)}</p></span>
+      <span class="go"><span class="lbl">${t.external ? 'Open folder' : 'Open tool'}</span><span aria-hidden="true">${t.external ? '↗' : '→'}</span></span>`;
+    grid.appendChild(a);
+  });
+  document.getElementById('soonList').innerHTML = TOOLS.filter(t=>t.status==='soon')
+    .map(t=>`<span>${esc(t.name)} <i>Coming soon</i></span>`).join('');
+})();
+
+/* ---------- guides ---------- */
+const _d = new Date(), today = `${_d.getFullYear()}-${String(_d.getMonth()+1).padStart(2,'0')}-${String(_d.getDate()).padStart(2,'0')}`; // local date, not UTC
+const isPrevious = g => !!g.previous || (!!g.validTo && g.validTo < today);
+const current = GUIDES.filter(g=>!isPrevious(g)).sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0)); // New first, list order kept otherwise
+const previous = GUIDES.filter(isPrevious);
+let tab = BU_ORDER.includes(ui.tab) ? ui.tab : 'All';
+let showAll = !!ui.showAll;
+let prevOpen = false;
+const fmtDate = d => new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+function guideRow(g){
+  const facts = [`${g.pages} pages`, `${g.sizeMB} MB`];
+  if(g.validTo) facts.push('Valid to ' + fmtDate(g.validTo));
+  if(g.note) facts.push(g.note);
+  const href = encodeURI(g.file);
+  return `<div class="row">
+    <div class="thumb${g.portrait?' portrait':''}" style="background-image:url('${encodeURI(g.cover)}')" aria-hidden="true"></div>
+    <div><div class="r-title">${esc(g.title)}</div>
+      <div class="r-meta">${g.isNew?'<span class="pill new">New</span>':''}<span class="pill bu">${esc(g.bu)}</span><span>${esc(facts.join(' · '))}</span></div></div>
+    <div class="r-act">
+      <a class="btn primary" href="${href}" target="_blank" rel="noopener" aria-label="View ${esc(g.title)} (opens PDF)">View</a>
+      <a class="btn" href="${href}" download aria-label="Download ${esc(g.title)}, ${g.sizeMB} MB">${DL}<span class="lbl-dl">Download</span></a>
+    </div></div>`;
+}
+
+function renderGuides(){
+  const tabs = ['All', ...BU_ORDER.filter(bu=>current.some(g=>g.bu===bu))];
+  if(!tabs.includes(tab)) tab = 'All';
+  document.getElementById('guideTabs').innerHTML = tabs.map(t=>{
+    const n = t==='All' ? current.length : current.filter(g=>g.bu===t).length;
+    return `<button class="tab" type="button" data-tab="${t}" aria-pressed="${t===tab}">${t}<span class="n">${n}</span></button>`;
+  }).join('');
+
+  const list = tab==='All' ? current : current.filter(g=>g.bu===tab);
+  const prevList = tab==='All' ? previous : previous.filter(g=>g.bu===tab);
+  // A BU tab always shows its full list; "All" previews the newest few.
+  const folded = tab==='All' && !showAll && list.length > PREVIEW_COUNT;
+  const visible = folded ? list.slice(0, PREVIEW_COUNT) : list;
+
+  let html = visible.map(guideRow).join('') || `<div class="empty">No current ${esc(tab)} guides.</div>`;
+  if(tab==='All' && list.length > PREVIEW_COUNT){
+    html += `<button class="fold" type="button" id="btnShowAll" aria-expanded="${!folded}"><span>${folded ? `Show all ${list.length} current guides` : 'Show fewer'}</span>${CHEV}</button>`;
+  }
+  if(prevList.length){
+    const names = prevList.map(g=>g.short||g.title).join(', ');
+    html += `<button class="fold" type="button" id="btnPrev" aria-expanded="${prevOpen}" aria-controls="prevList"><span>Previous editions (${prevList.length})${prevOpen ? '' : ' — ' + esc(names)}</span>${CHEV}</button>
+      <div class="prev-list" id="prevList"${prevOpen ? '' : ' hidden'}>${prevList.map(guideRow).join('')}</div>`;
+  }
+  document.getElementById('guideCard').innerHTML = html;
+}
+document.getElementById('guideTabs').addEventListener('click', e=>{
+  const b = e.target.closest('[data-tab]'); if(!b) return;
+  tab = b.dataset.tab; ui.tab = tab; saveUI(); renderGuides();
+  const nb = document.querySelector(`[data-tab="${tab}"]`); if(nb) nb.focus();
+});
+document.getElementById('guideCard').addEventListener('click', e=>{
+  if(e.target.closest('#btnShowAll')){ showAll = !showAll; ui.showAll = showAll; saveUI(); renderGuides(); document.getElementById('btnShowAll').focus(); }
+  else if(e.target.closest('#btnPrev')){ prevOpen = !prevOpen; renderGuides(); document.getElementById('btnPrev').focus(); }
+});
+document.getElementById('guidesSub').textContent = `${current.length} current · view in browser or download`;
+renderGuides();
+
+/* ---------- tutorials (folded by default; remembers the visitor's choice) ---------- */
+const toSec = d => { const [m,s] = d.split(':').map(Number); return m*60 + s; };
+const totalMin = Math.round(VIDEOS.reduce((s,v)=>s+toSec(v.dur),0)/60);
+document.getElementById('tutSummary').textContent = `${VIDEOS.length} videos · ${totalMin} min · start with installation`;
+document.getElementById('vidGrid').innerHTML = VIDEOS.map((v,i)=>`
+  <button class="vid" type="button" data-vid="${i}" aria-label="Play ${esc(v.title)}, ${esc(v.dur)}">
+    <span class="vth" style="background-image:url('${encodeURI(v.poster)}')"><span class="pb" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><span class="dur">${esc(v.dur)}</span></span>
+    <span class="vb"><span class="vt">${i+1} · ${esc(v.title)}</span><span class="vd">${esc(v.desc)}</span></span>
+  </button>`).join('');
+const tutToggle = document.getElementById('tutToggle'), tutWrap = document.getElementById('tutWrap');
+function setTut(open){ tutToggle.setAttribute('aria-expanded', String(open)); tutWrap.hidden = !open; }
+setTut(!!ui.tutOpen);
+tutToggle.addEventListener('click', ()=>{ ui.tutOpen = tutWrap.hidden; saveUI(); setTut(ui.tutOpen); });
+document.querySelectorAll('a[href="#tutorials"]').forEach(a=>a.addEventListener('click', ()=>setTut(true)));
+
+/* ---------- video modal: focus moves in, stays in, and returns ---------- */
+const modal = document.getElementById('modal'), player = document.getElementById('player'), mClose = document.getElementById('mClose'), mTitle = document.getElementById('mTitle');
+player.addEventListener('error', ()=>{ if(player.getAttribute('src')) mTitle.textContent += ' — video could not load. Check your connection and try again.'; });
+let lastFocus = null;
+document.getElementById('vidGrid').addEventListener('click', e=>{
+  const b = e.target.closest('[data-vid]'); if(!b) return;
+  const v = VIDEOS[+b.dataset.vid];
+  lastFocus = b;
+  player.src = encodeURI(v.file); player.poster = encodeURI(v.poster);
+  mTitle.textContent = v.title;
+  modal.classList.add('open'); document.body.style.overflow = 'hidden';
+  mClose.focus();
+  player.play().catch(()=>{});
+});
+function closeVideo(){
+  player.pause(); player.removeAttribute('src'); player.load();
+  modal.classList.remove('open'); document.body.style.overflow = '';
+  if(lastFocus) lastFocus.focus();
+}
+mClose.addEventListener('click', closeVideo);
+modal.addEventListener('click', e=>{ if(e.target === modal) closeVideo(); });
+document.addEventListener('keydown', e=>{
+  if(!modal.classList.contains('open')) return;
+  if(e.key === 'Escape') closeVideo();
+  if(e.key === 'Tab'){ e.preventDefault(); (document.activeElement === mClose ? player : mClose).focus(); }
+});
+
+/* ---------- footer ---------- */
+document.getElementById('footMeta').innerHTML = `Updated as of ${esc(SITE.updated)} <span class="ver">· ${esc(SITE.version)}</span>`;
+</script>
+</body>
+</html>

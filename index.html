@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VaultSync — Smart POSM Inventory Solutions</title>
-<meta name="description" content="VaultSync: POSM inventory, request and scorecard tools, CE merchandising guides and training videos in one place.">
+<meta name="description" content="VaultSync: POSM inventory, request and scorecard tools, CE merchandising guides and step-by-step training simulations in one place.">
 <!-- Keeps the page out of search results. It does NOT restrict access: anyone with the link can still open it. -->
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0B1B5C">
 <meta property="og:type" content="website">
 <meta property="og:title" content="VaultSync — Smart POSM Inventory Solutions">
-<meta property="og:description" content="POSM tools, merchandising guides and training videos in one place.">
+<meta property="og:description" content="POSM tools, merchandising guides and training simulations in one place.">
 <meta property="og:url" content="https://rmas-ce.github.io/CE-VAULT-SYNC/">
 <meta property="og:image" content="https://rmas-ce.github.io/CE-VAULT-SYNC/images/og-cover.png">
 <meta property="og:image:width" content="1200">
@@ -128,22 +128,16 @@ main{max-width:1080px;margin:0 auto;padding:30px 24px 8px}
 .tut-toggle[aria-expanded="true"] .chev{transform:rotate(180deg)}
 .tut-wrap{background:#fff;border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow);padding:16px}
 .vids{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.vid{display:flex;flex-direction:column;border:1px solid var(--g2);border-radius:var(--radius);overflow:hidden;background:#fff;padding:0;text-align:left;color:inherit}
+.vid{text-decoration:none;display:flex;flex-direction:column;border:1px solid var(--g2);border-radius:var(--radius);overflow:hidden;background:#fff;padding:0;text-align:left;color:inherit}
 .vid:hover{border-color:var(--g3)}
+.vid:focus-visible{outline:3px solid var(--info);outline-offset:2px}
+.vb .vgo{display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:12px;font-weight:700;color:var(--info)}
 .vth{position:relative;display:grid;place-items:center;aspect-ratio:16/9;background:#0b1a3a center/cover no-repeat}
 .vth .pb{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;color:var(--ink);box-shadow:0 6px 18px rgba(0,0,0,.3)}
 .vth .dur{position:absolute;right:8px;bottom:8px;background:rgba(10,14,30,.82);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px}
 .vb{display:block;padding:12px 14px 14px}
 .vb .vt{display:block;font-size:14px;font-weight:600}
 .vb .vd{display:block;font-size:12px;color:var(--ink-soft);margin-top:3px}
-
-/* Video modal */
-.modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(10,14,39,.86)}
-.modal.open{display:flex}
-.mbox{display:flex;flex-direction:column;align-items:center;gap:12px;max-width:100%}
-.mbox video{display:block;max-width:min(1100px,100%);max-height:calc(100vh - 120px);border-radius:12px;background:#000}
-.mbox h4{margin:0;color:#fff;font-size:14px;font-weight:600;text-align:center}
-.mclose{position:fixed;top:14px;right:14px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(10,14,39,.6);color:#fff;font-size:22px;line-height:1}
 
 footer{max-width:1080px;margin:0 auto;padding:18px 24px 30px;border-top:1px solid var(--g2);display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;color:var(--ink-soft);font-size:12px}
 footer .ver{color:var(--ink-soft);opacity:.8}
@@ -224,21 +218,13 @@ footer .ver{color:var(--ink-soft);opacity:.8}
 
   <section class="sec" id="tutorials" aria-label="Tutorials">
     <button class="tut-toggle" id="tutToggle" type="button" aria-expanded="false" aria-controls="tutWrap">
-      <span class="ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+      <span class="ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
       <span><span class="t1">Tutorials</span><br><span class="t2" id="tutSummary"></span></span>
       <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
     </button>
     <div class="tut-wrap" id="tutWrap" hidden><div class="vids" id="vidGrid"></div></div>
   </section>
 </main>
-
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
-  <div class="mbox">
-    <button class="mclose" id="mClose" type="button" aria-label="Close video">×</button>
-    <video id="player" controls playsinline preload="metadata"></video>
-    <h4 id="mTitle"></h4>
-  </div>
-</div>
 
 <footer>
   <span>VaultSync · Project Collaboration: SEPCO + RMAS</span>
@@ -252,8 +238,8 @@ footer .ver{color:var(--ink-soft);opacity:.8}
    from these lists automatically.
    ===================================================================== */
 const SITE = {
-  updated: "Oct 9, 2026",   // ← change whenever you update guides or tools
-  version: "v2.0.2"
+  updated: "Oct 16, 2026",   // ← change whenever you update guides or tools
+  version: "v2.1.0"
 };
 
 /* status: "live" (card opens url) · "soon" (shown as a Coming soon chip)
@@ -283,10 +269,10 @@ const GUIDES = [
   {title:"Bespoke AI Laundry Merch Guide 2024",           bu:"HA", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-bespoke-ai-laundry-2024.pdf",      cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-bespoke-ai-laundry-2024.jpg",      pages:7,  sizeMB:0.8, previous:true, short:"2024 Bespoke AI Laundry"}
 ];
 
-const VIDEOS = [
-  {title:"How to install",          desc:"Add the tools to your phone — Android and iPhone", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/how-to-install.mp4",          poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/how-to-install.jpg",          dur:"1:19"},
-  {title:"Using in a browser",      desc:"Chrome or Edge on a computer",                     file:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/using-in-browser.mp4",        poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/using-in-browser.jpg",        dur:"2:44"},
-  {title:"Inventory tool training", desc:"Stock, requests, transfers and reports",           file:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/inventory-tool-training.mp4", poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/videos/inventory-tool-training.jpg", dur:"8:14"}
+const SIMS = [
+  {title:"How to install",          desc:"Put the Request Form and Inventory Tool on your phone — Android and iPhone", href:"https://rmas-ce.github.io/CE-VAULT-SYNC/tutorials/install/",   poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/images/sim-install.webp",   steps:23},
+  {title:"Request Form & Proof",    desc:"Request POSM, submit the cart, upload proof of deployment",                   href:"https://rmas-ce.github.io/CE-VAULT-SYNC/tutorials/request/",   poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/images/sim-request.webp",   steps:18},
+  {title:"Inventory tool training", desc:"Stock in/out, scanning, labels, requests, approvals and reports",             href:"https://rmas-ce.github.io/CE-VAULT-SYNC/tutorials/inventory/", poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/images/sim-inventory.webp", steps:64}
 ];
 
 /* =====================================================================
@@ -395,46 +381,18 @@ document.getElementById('guidesSub').textContent = `${current.length} current ·
 renderGuides();
 
 /* ---------- tutorials (folded by default; remembers the visitor's choice) ---------- */
-const toSec = d => { const [m,s] = d.split(':').map(Number); return m*60 + s; };
-const totalMin = Math.round(VIDEOS.reduce((s,v)=>s+toSec(v.dur),0)/60);
-document.getElementById('tutSummary').textContent = `${VIDEOS.length} videos · ${totalMin} min · start with installation`;
-document.getElementById('vidGrid').innerHTML = VIDEOS.map((v,i)=>`
-  <button class="vid" type="button" data-vid="${i}" aria-label="Play ${esc(v.title)}, ${esc(v.dur)}">
-    <span class="vth" style="background-image:url('${encodeURI(v.poster)}')"><span class="pb" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span><span class="dur">${esc(v.dur)}</span></span>
-    <span class="vb"><span class="vt">${i+1} · ${esc(v.title)}</span><span class="vd">${esc(v.desc)}</span></span>
-  </button>`).join('');
+const totalSteps = SIMS.reduce((n,v)=>n+v.steps,0);
+document.getElementById('tutSummary').textContent = `${SIMS.length} tap-through simulations · ${totalSteps} steps · start with installation`;
+document.getElementById('vidGrid').innerHTML = SIMS.map((v,i)=>`
+  <a class="vid" href="${encodeURI(v.href)}" aria-label="Open simulation: ${esc(v.title)}, ${v.steps} steps">
+    <span class="vth" style="background-image:url('${encodeURI(v.poster)}')"><span class="dur">${v.steps} steps</span></span>
+    <span class="vb"><span class="vt">${i+1} · ${esc(v.title)}</span><span class="vd">${esc(v.desc)}</span><span class="vgo">Open simulation →</span></span>
+  </a>`).join('');
 const tutToggle = document.getElementById('tutToggle'), tutWrap = document.getElementById('tutWrap');
 function setTut(open){ tutToggle.setAttribute('aria-expanded', String(open)); tutWrap.hidden = !open; }
 setTut(!!ui.tutOpen);
 tutToggle.addEventListener('click', ()=>{ ui.tutOpen = tutWrap.hidden; saveUI(); setTut(ui.tutOpen); });
 document.querySelectorAll('a[href="#tutorials"]').forEach(a=>a.addEventListener('click', ()=>setTut(true)));
-
-/* ---------- video modal: focus moves in, stays in, and returns ---------- */
-const modal = document.getElementById('modal'), player = document.getElementById('player'), mClose = document.getElementById('mClose'), mTitle = document.getElementById('mTitle');
-player.addEventListener('error', ()=>{ if(player.getAttribute('src')) mTitle.textContent += ' — video could not load. Check your connection and try again.'; });
-let lastFocus = null;
-document.getElementById('vidGrid').addEventListener('click', e=>{
-  const b = e.target.closest('[data-vid]'); if(!b) return;
-  const v = VIDEOS[+b.dataset.vid];
-  lastFocus = b;
-  player.src = encodeURI(v.file); player.poster = encodeURI(v.poster);
-  mTitle.textContent = v.title;
-  modal.classList.add('open'); document.body.style.overflow = 'hidden';
-  mClose.focus();
-  player.play().catch(()=>{});
-});
-function closeVideo(){
-  player.pause(); player.removeAttribute('src'); player.load();
-  modal.classList.remove('open'); document.body.style.overflow = '';
-  if(lastFocus) lastFocus.focus();
-}
-mClose.addEventListener('click', closeVideo);
-modal.addEventListener('click', e=>{ if(e.target === modal) closeVideo(); });
-document.addEventListener('keydown', e=>{
-  if(!modal.classList.contains('open')) return;
-  if(e.key === 'Escape') closeVideo();
-  if(e.key === 'Tab'){ e.preventDefault(); (document.activeElement === mClose ? player : mClose).focus(); }
-});
 
 /* ---------- footer ---------- */
 document.getElementById('footMeta').innerHTML = `Updated as of ${esc(SITE.updated)} <span class="ver">· ${esc(SITE.version)}</span>`;
