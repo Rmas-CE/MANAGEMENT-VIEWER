@@ -11,6 +11,8 @@ Files
   index.html       VaultSync hub (view only)
   inventory.html   POSM Inventory + Requests, Metrics, Beginning Stock, Movement — Excel / PDF downloads
   scorecard.html   TS POSM KPI Grading — Download Excel / Download PDF
+  execution.html   POSM Execution Dashboard (TS store visits, POSM status, store flooring) — Download Excel / PDF
+  VaultSync-Viewer.html  One-file version of all of the above (optional)
   ViewerMirror.gs  Script for the new Viewer Mirror Google Sheet
 
 SETUP
@@ -26,8 +28,16 @@ SETUP
 2) inventory.html
    Open in Notepad, search for  PASTE_VIEWER_MIRROR_WEB_APP_URL_HERE  and replace it with the URL from 1e. Save.
 
+2b) scorecard.html  (NEW — TS Grading now checks access on the server)
+   Open TS Grading as Admin › Settings › copy the TS link. Copy only the part after ?key=
+   Open scorecard.html in Notepad, search for  PASTE_TS_VIEW_KEY_HERE  and replace it with that key. Save.
+   If you ever press "Make a new TS key" in TS Grading, paste the new key here again.
+
+2c) execution.html needs no setup — it reads the TS reports straight from the Execution Check Google Sheet
+   (read only). The Master List (edit stores / TS / models) and "Paste TS CSV" are removed.
+
 3) GitHub (account Rmas-CE)
-   New public repo e.g. VS-BOSS-VIEW › upload index.html, inventory.html, scorecard.html
+   New public repo e.g. VS-BOSS-VIEW › upload index.html, inventory.html, scorecard.html, execution.html (replace the old ones)
    Settings › Pages › main / root › Save
    Link for the bosses: https://rmas-ce.github.io/VS-BOSS-VIEW/
 

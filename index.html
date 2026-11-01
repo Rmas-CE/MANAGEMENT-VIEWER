@@ -133,7 +133,6 @@ main{max-width:1080px;margin:0 auto;padding:30px 24px 8px}
 .vid:focus-visible{outline:3px solid var(--info);outline-offset:2px}
 .vb .vgo{display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:12px;font-weight:700;color:var(--info)}
 .vth{position:relative;display:grid;place-items:center;aspect-ratio:16/9;background:#0b1a3a center/cover no-repeat}
-.vth .pb{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;color:var(--ink);box-shadow:0 6px 18px rgba(0,0,0,.3)}
 .vth .dur{position:absolute;right:8px;bottom:8px;background:rgba(10,14,30,.82);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px}
 .vb{display:block;padding:12px 14px 14px}
 .vb .vt{display:block;font-size:14px;font-weight:600}
@@ -169,7 +168,6 @@ footer .ver{color:var(--ink-soft);opacity:.8}
   .vids{grid-template-columns:1fr;gap:10px}
   .vid{display:grid;grid-template-columns:128px 1fr}
   .vth{aspect-ratio:auto;min-height:84px}
-  .vth .pb{width:36px;height:36px}
   footer{padding:16px 16px 28px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -238,8 +236,8 @@ footer .ver{color:var(--ink-soft);opacity:.8}
    from these lists automatically.
    ===================================================================== */
 const SITE = {
-  updated: "Oct 16, 2026",   // ← change whenever you update guides or tools
-  version: "v2.1.0"
+  updated: "Oct 29, 2026",   // ← change whenever you update guides or tools
+  version: "v2.2.0"
 };
 
 /* status: "live" (card opens url) · "soon" (shown as a Coming soon chip)
@@ -249,6 +247,7 @@ const TOOLS = [
   {name:"POSM Inventory",      desc:"Warehouse stock, stock in/out log, metrics — view only",   icon:"box",   status:"live", url: VB+"inventory.html"},
   {name:"POSM Requests",       desc:"For Sorting, For Delivery, Delivered and proof — view only", icon:"store", status:"live", url: VB+"inventory.html#requests"},
   {name:"TS Scorecard",        desc:"Trade Supervisor KPI grades — view only",                   icon:"chart", status:"live", url: VB+"scorecard.html"},
+  {name:"POSM Execution Dashboard", desc:"TS store visits, POSM status per model and store flooring — view only", icon:"pin", status:"live", url: VB+"execution.html"},
   {name:"Execution Analytics", desc:"SPOP, TV BG and SB compliance · Google Drive",              icon:"pie",   status:"live", external:true, url:"https://drive.google.com/drive/folders/1NQLRVrS4uuNL1zwDpdtPzVKTjHJ8dwhy"}
 ];
 
@@ -289,6 +288,7 @@ const ICONS = {
   chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4V8Z"/><circle cx="12" cy="13" r="3.5"/>',
   pie:'<circle cx="12" cy="12" r="9"/><path d="M12 3v9l6.4 6.4"/>',
+  pin:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M9.2 9.6l2 2 3.6-3.6"/>',
   exec:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8.5 10l1.5 1.5 3-3M8.5 16l1.5 1.5 3-3"/>'
 };
 const svg = (paths, size=24, sw=1.6, cls='') => `<svg${cls?` class="${cls}"`:''} width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
