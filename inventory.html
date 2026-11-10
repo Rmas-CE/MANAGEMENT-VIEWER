@@ -907,6 +907,7 @@ function scopeData(d){
     inventory: (d.inventory||[]).filter(r=>okWh(r.warehouseId) && okCode(r.posmCode)),
     transactions: (d.transactions||[]).filter(t=>okWh(t.warehouseId) && okCode(t.posmCode)),
     ioSummary: Array.isArray(d.ioSummary) ? d.ioSummary.filter(r=>okWh(r.w) && okCode(r.c)) : d.ioSummary,
+    aging: Array.isArray(d.aging) ? d.aging.filter(r=>okWh(r.w) && okCode(r.c)) : d.aging,
     requests: (d.requests||[]).filter(r=>okWh(r.warehouseId) && okCode(r.posmCode)),
     transfers: (d.transfers||[]).filter(t=>(okWh(t.fromWarehouseId) || okWh(t.toWarehouseId)) && okCode(t.posmCode)),
     pendingActions: isRegionUser() ? (d.pendingActions||[]).filter(p=>p.submittedBy===session.name) : (d.pendingActions||[]),
@@ -1637,7 +1638,15 @@ function applyLocalUpdateTo(action, payload, result){
       return true;
     }
     case 'newRequest': {
-      DATA.requests.push({id:payload.id, posmCode:payload.posmCode, qty:Number(payload.qty), warehouseId:payload.warehouseId, store:payload.store, ts:payload.ts, status:'for_sorting', dateCreated:payload.dateCreated, dateDelivered:'', dueDate:'', createdBy:payload.createdBy||'', purpose:payload.purpose||''});
+      // The request's qty is taken off the Inventory right away (For Sorting) — see Code.gs deductForRequest_.
+      const taken = !!(result && result.stockDeducted);
+      DATA.requests.push({id:payload.id, posmCode:payload.posmCode, qty:Number(payload.qty), warehouseId:payload.warehouseId, store:payload.store, ts:payload.ts, status:'for_sorting', dateCreated:payload.dateCreated, dateDelivered:'', dueDate:'', createdBy:payload.createdBy||'', purpose:payload.purpose||'', stockDeducted: taken?'yes':''});
+      if(taken){
+        let inv = DATA.inventory.find(r=>r.warehouseId===payload.warehouseId && r.posmCode===payload.posmCode);
+        if(!inv){ inv = {warehouseId:payload.warehouseId, posmCode:payload.posmCode, qty:0, beginningStock:0}; DATA.inventory.push(inv); }
+        inv.qty = result.newQty!==undefined ? Number(result.newQty) : Math.max(0, inv.qty - Number(payload.qty));
+        DATA.transactions.unshift({id:result.txnId||('TXN-'+payload.id), date:payload.dateCreated, type:'out', posmCode:payload.posmCode, warehouseId:payload.warehouseId, qty:Number(payload.qty), reason:'Dispatched for store request — taken at For Sorting ('+payload.store+')', ref:payload.id, receiptImage:''});
+      }
       return true;
     }
     case 'advanceRequest': {
@@ -1647,9 +1656,12 @@ function applyLocalUpdateTo(action, payload, result){
         req.status = 'for_delivery'; req.dueDate = result.dueDate||req.dueDate;
       } else if(result && result.status==='delivered'){
         req.status = 'delivered'; req.dateDelivered = payload.date;
-        const inv = DATA.inventory.find(r=>r.warehouseId===req.warehouseId && r.posmCode===req.posmCode);
-        if(inv) inv.qty -= Number(req.qty);
-        DATA.transactions.unshift({id:payload.txnId, date:payload.date, type:'out', posmCode:req.posmCode, warehouseId:req.warehouseId, qty:Number(req.qty), reason:'Dispatched for store delivery ('+req.store+')', ref:req.id, receiptImage:''});
+        // Requests made from Nov 5 2026 already took their stock at For Sorting — no second deduction.
+        if(String(req.stockDeducted||'').toLowerCase()!=='yes'){
+          const inv = DATA.inventory.find(r=>r.warehouseId===req.warehouseId && r.posmCode===req.posmCode);
+          if(inv) inv.qty -= Number(req.qty);
+          DATA.transactions.unshift({id:payload.txnId, date:payload.date, type:'out', posmCode:req.posmCode, warehouseId:req.warehouseId, qty:Number(req.qty), reason:'Dispatched for store delivery ('+req.store+')', ref:req.id, receiptImage:''});
+        }
       } else return false;
       return true;
     }
@@ -1862,10 +1874,26 @@ function renderActivityFeed(){
   const more = document.getElementById('actShowMore');
   if(more) more.addEventListener('click', ()=>{ window.__actShow = CAP + 25; renderActivityFeed(); });
 }
-// Timeline: For Sorting has NO due date. Marked For Delivery -> due 7 days later.
-// Delivered -> proof of deployment photo due within 10 days (PROOF_DUE_DAYS).
+// Timeline: For Sorting -> RMAS must sort and move it to For Delivery within 10 days of the request.
+// Marked For Delivery -> due 7 days later. Delivered -> proof of deployment photo due within 10 days (PROOF_DUE_DAYS).
+const SORTING_DUE_DAYS = 10;
 const DELIVERY_DUE_DAYS = 7;
-function reqDueDate(r){ return (r && r.status!=='for_sorting' && r.status!=='rejected' && r.dueDate) ? String(r.dueDate).slice(0,10) : ''; }
+// Calendar day (local time) of a stored date / timestamp, as YYYY-MM-DD.
+function localDay(v){
+  const s = String(v==null?'':v).trim(); if(!s) return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s); if(isNaN(d)) return s.slice(0,10);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function sortingDueDate(r){ const c = r && localDay(r.dateCreated); return c ? addDays(c, SORTING_DUE_DAYS) : ''; }
+function reqDueDate(r){
+  if(!r || r.status==='rejected') return '';
+  if(r.status==='for_sorting') return sortingDueDate(r);
+  return r.dueDate ? String(r.dueDate).slice(0,10) : '';
+}
+// Sorting overdue = still in For Sorting after its 10-day due date (due today is not late yet).
+function isSortingOverdue(r){ const d = (r && r.status==='for_sorting') ? sortingDueDate(r) : ''; return !!(d && d < todayStr()); }
+function getOverdueSorting(){ return DATA.requests.filter(isSortingOverdue); }
 // Overdue = more than 7 days since it was marked For Delivery (the due date has passed; due today is not late yet).
 function isOverdue(r){ return !!(r && r.status==='for_delivery' && r.dueDate && String(r.dueDate).slice(0,10) < todayStr()); }
 function getOverdueRequests(){ return DATA.requests.filter(isOverdue); }
@@ -1964,7 +1992,7 @@ function updateNotifBadge(){
   const badge = document.getElementById('notifBadge');
   if(!badge || !DATA || !session) return;
   const pendingCount = session.role==='admin' ? (DATA.pendingActions||[]).filter(p=>p.status==='pending').length : 0;
-  const overdueCount = getOverdueRequests().length;
+  const overdueCount = getOverdueRequests().length + getOverdueSorting().length;
   const total = pendingCount + overdueCount;
   badge.textContent = total > 99 ? '99+' : total;
   badge.style.display = total > 0 ? '' : 'none';
@@ -1984,6 +2012,7 @@ function renderNotifPanel(){
   const isAdmin = session && session.role==='admin';
   const pending = isAdmin ? (DATA.pendingActions||[]).filter(p=>p.status==='pending').sort((a,b)=>String(b.submittedAt).localeCompare(String(a.submittedAt))) : [];
   const overdue = getOverdueRequests().sort((a,b)=>String(a.dueDate).localeCompare(String(b.dueDate)));
+  const sortLate = getOverdueSorting().sort((a,b)=>sortingDueDate(a).localeCompare(sortingDueDate(b)));
   panel.innerHTML = `
     <div class="notif-panel-head"><span>Notifications</span><button id="notifCloseBtn">&times;</button></div>
     ${isAdmin ? `
@@ -2000,6 +2029,14 @@ function renderNotifPanel(){
         const daysOver = daysSinceDate(r.dueDate);
         return `<div class="notif-item" data-goto="requests"><div class="t1">${r.posmCode} — ${r.store}</div><div class="t2">${p?p.desc:''} · ${daysOver} day${daysOver!==1?'s':''} overdue</div></div>`;
       }).join('') : `<div class="notif-empty">No overdue deliveries right now.</div>`}
+    </div>
+    <div class="notif-section">
+      <div class="notif-section-title">Overdue Sorting (${sortLate.length})</div>
+      ${sortLate.length ? sortLate.slice(0,8).map(r=>{
+        const p = posmByCode(r.posmCode);
+        const daysOver = daysSinceDate(sortingDueDate(r));
+        return `<div class="notif-item" data-goto="requests"><div class="t1">${r.posmCode} — ${r.store}</div><div class="t2">${p?p.desc:''} · not sorted, ${daysOver} day${daysOver!==1?'s':''} overdue</div></div>`;
+      }).join('') : `<div class="notif-empty">No overdue sorting right now.</div>`}
     </div>
   `;
   document.getElementById('notifCloseBtn').addEventListener('click', closeNotifPanel);
@@ -2888,7 +2925,7 @@ function openNewRequestModal(){
       posmCode:document.getElementById('rqPosm').value, qty:Math.max(1,parseInt(document.getElementById('rqQty').value||'0',10)),
       warehouseId:document.getElementById('rqWh').value, store:storeInput.value||'—',
       ts:document.getElementById('rqTs').value||'—',
-      dateCreated:created, dateDelivered:null, dueDate:'',   // no due date while For Sorting
+      dateCreated:created, dateDelivered:null, dueDate:'',   // For Sorting due date is worked out from dateCreated (+10 days), see sortingDueDate()
       createdBy: (session && session.name) || ''
     };
     btn.disabled = true; btn.textContent = 'Saving...';
@@ -2896,9 +2933,9 @@ function openNewRequestModal(){
       // straight in "For Sorting" for everyone to see.
       const reqId = uid('REQ');
       try{
-        await postAction('newRequest', Object.assign({id:reqId}, data, readCreds()));
+        const res = await postAction('newRequest', Object.assign({id:reqId}, data, readCreds()));
         closeModal();
-        applyLocalUpdate('newRequest', Object.assign({id:reqId}, data));
+        applyLocalUpdate('newRequest', Object.assign({id:reqId}, data), res);
         renderAll();
       }
       catch(e){ alert('Could not save the request.\n\n' + ((e && e.message) || 'Please try again.')); btn.disabled=false; btn.textContent='Create Request'; }
@@ -3075,6 +3112,12 @@ function alertSortingList(){
   return DATA.requests.filter(r=> r.status==='for_sorting' && (whF==='all' || r.warehouseId===whF) && matchesBUFilter(r.posmCode))
     .sort((a,b)=>String(a.dateCreated).localeCompare(String(b.dateCreated)));
 }
+// Requests still in For Sorting: overdue (past the 10-day sorting due date) or due within 3 days.
+function alertSortDue(kind){
+  const today = todayStr(), in3 = addDays(today, 3);
+  return alertSortingList().filter(r=>{ const d = sortingDueDate(r); return d && (kind==='sortoverdue' ? d < today : (d >= today && d <= in3)); })
+    .sort((a,b)=>sortingDueDate(a).localeCompare(sortingDueDate(b)));
+}
 function alertDueRequests(kind){
   const today = todayStr(), in3 = addDays(today, 3), whF = currentFilterWarehouse();
   return DATA.requests.filter(r=> r.status==='for_delivery' && r.dueDate && (whF==='all' || r.warehouseId===whF) &&
@@ -3093,6 +3136,14 @@ function lowStockPdfRows(list){
   const th = alertThreshold();
   return list.map(x=>({'POSM Code':x.p.code, Description:x.p.desc, Model:x.p.model||'', Type:x.p.type||'', 'Business Unit':buLabel(x.p.bu),
       'Total Qty (all warehouses)':x.qty, 'Reorder Level':th}));
+}
+// "Sort by" cell: the sorting due date with a late / due-soon tag.
+function sortDueCell(r, today){
+  const due = sortingDueDate(r); if(!due) return '';
+  const days = Math.round((new Date(today) - new Date(due))/86400000);
+  const tag = days>0 ? `<span class="badge expired">${days} day${days!==1?'s':''} late</span>`
+    : `<span class="badge ${days>=-3?'obsolete':'pending'}">${days===0?'Due today':'in '+(-days)+' day'+(-days!==1?'s':'')}</span>`;
+  return `<div style="white-space:nowrap;">${fmtDate(due)}</div>${tag}`;
 }
 function openAlertDetail(kind){
   const scopeTxt = escHtml(pdfScopeLabel());
@@ -3114,18 +3165,21 @@ function openAlertDetail(kind){
       'Per Warehouse': DATA.inventory.filter(r=>r.posmCode===x.p.code && r.qty>0).map(r=>((whById(r.warehouseId)||{}).name||r.warehouseId)+': '+r.qty).join(', ')}));
     exportName = 'Low-Stock';
     loadImagesFor(list.slice(0,60).map(x=>x.p.code));
-  } else if(kind==='sorting'){
-    const list = alertSortingList();
-    title = `Waiting for Sorting — ${list.length}`;
-    intro = 'New requests still in <b>For Sorting</b>. Oldest first.';
-    table = `<table class="inv-table"><thead><tr><th>Request</th><th>POSM</th><th>Store / TS</th><th>Warehouse</th><th>Requested</th></tr></thead><tbody>
+  } else if(kind==='sorting' || kind==='sortoverdue' || kind==='sortduesoon'){
+    const list = kind==='sorting' ? alertSortingList() : alertSortDue(kind), today = todayStr();
+    title = kind==='sortoverdue' ? `Overdue Sorting — ${list.length}` : kind==='sortduesoon' ? `Sorting Due Within 3 Days — ${list.length}` : `Waiting for Sorting — ${list.length}`;
+    intro = kind==='sortoverdue' ? `Requests still in <b>For Sorting</b> after their due date (${SORTING_DUE_DAYS} days after the request). Move them to For Delivery. Oldest first.`
+          : kind==='sortduesoon' ? `Requests in <b>For Sorting</b> that must be moved to For Delivery in the next 3 days.`
+          : `New requests still in <b>For Sorting</b> — each must be sorted and moved to For Delivery within ${SORTING_DUE_DAYS} days. Oldest first.`;
+    table = `<table class="inv-table"><thead><tr><th>Request</th><th>POSM</th><th>Store / TS</th><th>Warehouse</th><th>Requested</th><th>Sort by</th></tr></thead><tbody>
       ${list.map(r=>{ const p = posmByCode(r.posmCode), w = whById(r.warehouseId), d = daysSinceDate(r.dateCreated);
         return `<tr><td class="cell-sub">${r.id}</td><td><div class="cell-main">${r.posmCode} × ${r.qty}</div><div class="cell-sub">${p?p.desc:''}</div>${modelHtml(p)}</td>
           <td><div>${r.store}</div><div class="cell-sub">${r.ts||''}</div></td><td class="cell-sub">${w?w.name:r.warehouseId}</td>
-          <td><div style="white-space:nowrap;">${fmtDate(r.dateCreated)}</div><span class="badge ${d>2?'obsolete':'pending'}">${d===0?'Today':d+' day'+(d!==1?'s':'')+' ago'}</span></td></tr>`; }).join('')}
+          <td><div style="white-space:nowrap;">${fmtDate(r.dateCreated)}</div><span class="badge ${d>2?'obsolete':'pending'}">${d===0?'Today':d+' day'+(d!==1?'s':'')+' ago'}</span></td>
+          <td>${sortDueCell(r, today)}</td></tr>`; }).join('')}
       </tbody></table>`;
-    exportRows = list.map(r=>({'Request ID':r.id, 'POSM Code':r.posmCode, Description:(posmByCode(r.posmCode)||{}).desc||'', Model:(posmByCode(r.posmCode)||{}).model||'', Qty:r.qty, Store:r.store, 'Trade Supervisor':r.ts, Warehouse:(whById(r.warehouseId)||{}).name||r.warehouseId, 'Date Requested':r.dateCreated}));
-    exportName = 'Waiting-For-Sorting';
+    exportRows = list.map(r=>({'Request ID':r.id, 'POSM Code':r.posmCode, Description:(posmByCode(r.posmCode)||{}).desc||'', Model:(posmByCode(r.posmCode)||{}).model||'', Qty:r.qty, Store:r.store, 'Trade Supervisor':r.ts, Warehouse:(whById(r.warehouseId)||{}).name||r.warehouseId, 'Date Requested':r.dateCreated, 'Sort By (Due)':sortingDueDate(r)}));
+    exportName = kind==='sortoverdue' ? 'Overdue-Sorting' : kind==='sortduesoon' ? 'Sorting-Due-Soon' : 'Waiting-For-Sorting';
     goBtn = `<button class="btn" id="alGo" data-go="requests">Open Requests board</button>`;
   } else if(kind==='overdue' || kind==='duesoon'){
     const list = alertDueRequests(kind), today = todayStr();
@@ -3198,6 +3252,9 @@ function renderAlertPanel(){
   const items = [], isAdmin = !!(session && session.role==='admin');
   const sortN = alertSortingList().length;
   if(sortN) items.push({icon:'requests', color:'warning', label:`${sortN} ${vsPl(sortN,'request','requests')} waiting for sorting`, nav:'sorting'});
+  const sortLateN = alertSortDue('sortoverdue').length, sortSoonN = alertSortDue('sortduesoon').length;
+  if(sortLateN) items.push({icon:'alert', color:'danger', label:`${sortLateN} ${vsPl(sortLateN,'request','requests')} OVERDUE for sorting (more than ${SORTING_DUE_DAYS} days in For Sorting)`, nav:'sortoverdue'});
+  if(sortSoonN) items.push({icon:'clock', color:'warning', label:`${sortSoonN} ${vsPl(sortSoonN,'request','requests')} must be sorted within 3 days`, nav:'sortduesoon'});
   if(ALERTS.pendingCount && isAdmin) items.push({icon:'clock', color:'warning', label:`${ALERTS.pendingCount} ${vsPl(ALERTS.pendingCount,'action','actions')} awaiting approval`, nav:'pendingList'});
   // Counted from the full data of the current view (region / BU / warehouse), so the number
   // always matches the list that opens when the alert is clicked.
@@ -3236,6 +3293,9 @@ function renderDashboard(){
   const pendingReq = DATA.requests.filter(r=>(r.status==='for_sorting'||r.status==='for_delivery') && (whFilter==='all'||r.warehouseId===whFilter) && matchesBUFilter(r.posmCode));
   const deliveredThisWeek = DATA.requests.filter(r=>r.status==='delivered' && r.dateDelivered && new Date(r.dateDelivered) >= new Date(Date.now()-7*86400000) && (whFilter==='all'||r.warehouseId===whFilter) && matchesBUFilter(r.posmCode));
   const deltaVsBeginning = totalBeginning ? ((totalStock-totalBeginning)/totalBeginning*100) : 0;
+  // Warehouse aging: every warehouse + POSM that has stock, with its days in the warehouse.
+  const agingRows = hasAging() ? invRows.filter(r=>r.qty>0).map(r=>{ const a = whAge(r.warehouseId, r.posmCode); return a ? {r, p:posmByCode(r.posmCode), a} : null; })
+    .filter(x=>x && x.p && x.p.status!=='deleted').sort((x,y)=>y.a.days-x.a.days || y.r.qty-x.r.qty) : [];
 
   const html = `
     ${renderAlertPanel()}
@@ -3264,6 +3324,15 @@ function renderDashboard(){
         </tbody></table></div>
       </div>
     </div>
+    ${hasAging() ? `<div class="section-row cols-2">
+      <div class="panel"><div class="panel-head"><div><h3>Warehouse Aging</h3><div class="panel-sub">POSM pieces by how long they have been in the warehouse (since first Stock In)</div></div></div>
+        <div class="chart-wrap"><canvas id="chartAging"></canvas></div></div>
+      <div class="panel"><div class="panel-head"><div><h3>Longest in Warehouse</h3><div class="panel-sub">Oldest stock first${agingRows.length?` · ${agingRows.length} POSM-warehouse item${agingRows.length!==1?'s':''}`:''}</div></div><div class="panel-actions"><button class="btn sm" id="btnExportAging" title="Download days in warehouse for every POSM per warehouse">${icon('download',13)} Excel</button><button class="btn sm" id="btnAgingInv">View all →</button></div></div>
+        <div class="table-wrap dispose-scroll"><table><thead><tr><th>POSM</th><th>Warehouse</th><th style="text-align:right;">Qty</th><th style="text-align:right;">Days</th></tr></thead><tbody>
+          ${agingRows.slice(0,15).map(x=>{ const w = whById(x.r.warehouseId); return `<tr><td><div class="row-flex">${tile(x.p,28)}<div><div class="cell-main">${x.p.code}</div><div class="cell-sub">${escHtml(x.p.desc)}</div></div></div></td><td class="cell-sub">${escHtml(w?w.name:x.r.warehouseId)}</td><td class="qty-strong" style="text-align:right;">${x.r.qty.toLocaleString()}</td><td style="text-align:right;">${ageHtml(x.a)}</td></tr>`; }).join('') || '<tr><td colspan="4" class="empty-state">No POSM in stock for this filter.</td></tr>'}
+        </tbody></table></div>
+      </div>
+    </div>` : ''}
     <div class="panel">
       <div class="panel-head"><div><h3>Recent Activity</h3><div class="panel-sub">All transaction history — stock in/out, requests, transfers, and org changes</div></div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -3315,7 +3384,8 @@ function renderDashboard(){
     const isAdmin = session && session.role==='admin';
     const reqRow = (r, extra)=>Object.assign({ID:r.id, 'POSM Code':r.posmCode, Model:(posmByCode(r.posmCode)||{}).model||'', Qty:r.qty, Store:r.store, 'Trade Supervisor':r.ts}, extra);
     const sheets = [
-      {name:'Waiting for Sorting', rows:alertSortingList().map(r=>reqRow(r, {'Date Requested':r.dateCreated}))},
+      {name:'Waiting for Sorting', rows:alertSortingList().map(r=>reqRow(r, {'Date Requested':r.dateCreated, 'Sort By (Due)':sortingDueDate(r)}))},
+      {name:'Overdue Sorting', rows:alertSortDue('sortoverdue').map(r=>reqRow(r, {'Date Requested':r.dateCreated, 'Sort By (Due)':sortingDueDate(r)}))},
       {name:'Overdue Deliveries', rows:alertDueRequests('overdue').map(r=>reqRow(r, {'Due Date':r.dueDate}))},
       {name:'Due Soon (3 days)', rows:alertDueRequests('duesoon').map(r=>reqRow(r, {'Due Date':r.dueDate}))},
       {name:'No Proof of Deployment', rows:proofMissingList().map(r=>reqRow(r, {'Date Delivered':r.dateDelivered, 'Proof Status':proofStatusLabel(r)}))},
@@ -3333,9 +3403,19 @@ function renderDashboard(){
     const exportRows = filtered.map(i=>({Date:i.date, Type:i.type, Title:i.title, Detail:i.sub}));
     exportRowsToExcel(exportRows, 'Recent-Activity-'+todayStr()+'.xlsx', 'Recent Activity');
   });
-  loadImagesFor(disposeItems.slice(0,5).map(p=>p.code));
+  loadImagesFor(disposeItems.slice(0,5).map(p=>p.code).concat(agingRows.slice(0,15).map(x=>x.p.code)));
+  const agingInvBtn = document.getElementById('btnAgingInv');
+  if(agingInvBtn) agingInvBtn.addEventListener('click', ()=>{ invFilters.status='all'; invFilters.age='all'; invFilters.sort='oldest'; invScope='mine'; invLimit=INV_PAGE; currentSection='inventory'; renderAll(); window.scrollTo(0,0); });
+  const agingXlsBtn = document.getElementById('btnExportAging');
+  if(agingXlsBtn) agingXlsBtn.addEventListener('click', ()=>{
+    const rows = agingRows.map(x=>{ const w = whById(x.r.warehouseId);
+      return {'POSM Code':x.p.code, Description:x.p.desc, Model:x.p.model||'', 'Business Unit':buLabel(x.p.bu), Type:x.p.type||'', Status:x.p.status,
+        Warehouse:w?w.name:x.r.warehouseId, Region:w?w.region:'', Qty:x.r.qty, 'In Warehouse Since':x.a.since, 'Days in Warehouse':x.a.days,
+        'Aging Bracket':AGE_BUCKETS.find(b=>b.key===ageBucket(x.a.days)).label}; });
+    exportRowsToExcel(rows, 'Warehouse-Aging-'+todayStr()+'.xlsx', 'Warehouse Aging');
+  });
 
-  destroyCharts(['chartWhStock','chartMoveSplit','chartWeeklyTrend']);
+  destroyCharts(['chartWhStock','chartMoveSplit','chartWeeklyTrend','chartAging']);
   const c = getChartColors();
   const whStock = WAREHOUSES.map(w=>({name:w.name, qty:DATA.inventory.filter(r=>r.warehouseId===w.id).reduce((s,r)=>s+r.qty,0)})).sort((a,b)=>b.qty-a.qty);
   fitBarHeight('chartWhStock', whStock.length);
@@ -3351,6 +3431,19 @@ function renderDashboard(){
     data:{ labels:['Fast Moving','Slow Moving','Non-Moving'], datasets:[{data:[moveCounts.fast,moveCounts.low,moveCounts.non], backgroundColor:[c.success,c.warning,c.ink3], borderWidth:0}]},
     options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{color:c.ink, boxWidth:10, padding:14, font:{size:11.5}}}} }
   });
+  if(hasAging()){
+    const ageQty = AGE_BUCKETS.map(b=>agingRows.filter(x=>ageBucket(x.a.days)===b.key).reduce((s,x)=>s+x.r.qty,0));
+    const ageCnt = AGE_BUCKETS.map(b=>agingRows.filter(x=>ageBucket(x.a.days)===b.key).length);
+    charts.chartAging = safeChart(document.getElementById('chartAging'), {
+      type:'bar',
+      data:{ labels: AGE_BUCKETS.map(b=>b.label), datasets:[{ label:'Pieces', data: ageQty,
+        backgroundColor:[c.success, c.warning, '#D9711C', c.danger], borderRadius:5, maxBarThickness:46 }]},
+      options: Object.assign((()=>{ const o = baseChartOpts(c,{legend:false});
+          o.plugins.tooltip.callbacks = {label:(ctx)=>` ${ctx.parsed.y.toLocaleString()} pcs · ${ageCnt[ctx.dataIndex]} POSM-warehouse item${ageCnt[ctx.dataIndex]===1?'':'s'}`}; return o; })(), {
+        onClick:(e, els)=>{ if(!els || !els.length) return; invFilters.status='all'; invFilters.age=AGE_BUCKETS[els[0].index].key; invFilters.sort='oldest'; invScope='mine'; invLimit=INV_PAGE; currentSection='inventory'; renderAll(); window.scrollTo(0,0); }
+      })
+    });
+  }
   const weekly = weeklyMetrics(8, buFilter);
   charts.chartWeeklyTrend = safeChart(document.getElementById('chartWeeklyTrend'), {
     type:'line',
@@ -3363,7 +3456,7 @@ function renderDashboard(){
 }
 
 /* ============================= RENDER: INVENTORY ============================= */
-let invFilters = {search:'', bu:'all', status:'all'};
+let invFilters = {search:'', bu:'all', status:'all', age:'all', sort:'default'};
 let invScope = 'mine';
 const INV_PAGE = 60;
 // Cards (big pictures) or List (compact table) — remembered on this device.
@@ -3375,17 +3468,70 @@ function whereShort(code){
   const part = rows.slice(0,3).map(r=>{ const w = whById(r.warehouseId); const n = escHtml(w?w.name:r.warehouseId) + ' <b>' + r.qty.toLocaleString() + '</b>'; return mine.has(r.warehouseId) ? `<span style="color:var(--primary-ink);font-weight:700;">${n}</span>` : n; }).join(' · ');
   return part + (rows.length>3 ? ` · <span class="cell-sub">+${rows.length-3} more</span>` : '');
 }
-function invListHtml(rows, whFilter, allMode){
+/* ===== MANAGEMENT VIEWER: All Qty + quantity per warehouse (All Inventory) ===== */
+function vsvOn(){ return !!(session && session.viewer); }
+function vsvWhQty(code){ return WAREHOUSES.map(w=>({w, qty:Number((invRow(w.id,code)||{}).qty)||0})); }
+function vsvQtyCell(n){ return n ? n.toLocaleString() : '<span class="cell-sub">–</span>'; }
+// Card: every warehouse that has this POSM, with its quantity.
+function vsvWhBreakdown(code, whFilter){
+  const list = vsvWhQty(code).filter(x=>x.qty>0).sort((a,b)=>b.qty-a.qty);
+  const all = list.reduce((t,x)=>t+x.qty,0);
+  const head = `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;"><span>All Qty (all warehouses)</span><span>${all.toLocaleString()}</span></div>`;
+  if(!list.length) return `<div class="vsv-whq" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:6px;">${head}<div class="cell-sub" style="font-size:11.5px;">No stock in any warehouse.</div></div>`;
+  return `<div class="vsv-whq" style="margin-top:8px;border-top:1px dashed var(--line);padding-top:6px;">${head}
+    <div class="cell-sub" style="font-size:11px;margin:2px 0 2px;">Quantity per warehouse</div>
+    <div style="max-height:150px;overflow:auto;">${list.map(x=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;line-height:1.6;${x.w.id===whFilter?'font-weight:700;color:var(--primary-ink);':''}"><span>${escHtml(x.w.name)} <span class="cell-sub">(${escHtml(x.w.region)})</span></span><span>${x.qty.toLocaleString()}</span></div>`).join('')}</div></div>`;
+}
+// Top of All Inventory: overall All Qty + total per warehouse for the filtered POSM list.
+function vsvSummaryHtml(rows){
+  const per = WAREHOUSES.map(w=>({w, qty: rows.reduce((t,p)=>t+(Number((invRow(w.id,p.code)||{}).qty)||0),0)}));
+  const all = per.reduce((t,x)=>t+x.qty,0);
+  return `<div class="vsv-sum" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:0 0 14px;">
+    <div style="grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:12px 14px;border-radius:12px;background:var(--primary);color:#fff;">
+      <span style="font-size:12px;font-weight:600;opacity:.9;">ALL QTY — all warehouses</span>
+      <span style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;">${all.toLocaleString()}</span>
+      <span style="font-size:12px;opacity:.9;">pcs · ${rows.length.toLocaleString()} POSM in this list</span></div>
+    ${per.map(x=>`<div style="padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);">
+      <div class="cell-sub" style="font-size:11px;line-height:1.3;">${escHtml(x.w.region)}</div>
+      <div style="font-size:12.5px;font-weight:700;line-height:1.3;">${escHtml(x.w.name)}</div>
+      <div class="qty-strong" style="font-size:17px;">${x.qty.toLocaleString()}</div></div>`).join('')}
+  </div>`;
+}
+// List view: All Qty + one column per warehouse.
+function vsvListHtml(rows, whFilter){
   const shown = rows.slice(0, invLimit);
   if(!shown.length) return `<div class="empty-state">No POSM matches this filter.</div>`;
   const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
-  return `<div class="table-wrap"><table class="inv-table"><thead><tr><th>POSM</th><th>Type</th><th>BU</th><th>Status</th><th style="text-align:right;">${whFilter==='all'?'Total Qty':'Qty'}</th><th style="text-align:right;">Beginning</th>${allMode?'<th>Where it is</th>':'<th>Actions</th>'}</tr></thead><tbody>
+  const hl = 'background:var(--primary-soft, rgba(21,80,230,.08));';
+  return `<div class="table-wrap"><table class="inv-table"><thead><tr><th>POSM</th><th>Type</th><th>BU</th><th>Status</th><th style="text-align:right;">All Qty</th>${WAREHOUSES.map(w=>`<th style="text-align:right;white-space:nowrap;${w.id===whFilter?hl:''}" title="${escHtml(w.region)}">${escHtml(w.name)}</th>`).join('')}<th style="text-align:right;">Beginning</th>${hasAging()?'<th style="text-align:right;" title="Days since the first Stock In (oldest warehouse when showing all)">Days in WH</th>':''}</tr></thead><tbody>
+    ${shown.map(p=>{
+      const per = vsvWhQty(p.code), all = per.reduce((t,x)=>t+x.qty,0), beg = totalBeginningForPosm(p.code, whFilter);
+      return `<tr><td><div class="row-flex">${tile(p,34)}<div><div class="cell-main">${p.code}</div><div class="cell-sub" title="${p.desc}">${p.desc}</div>${modelHtml(p)}</div></div></td>
+        <td class="cell-sub">${p.type}</td><td>${buLabel(p.bu)}</td><td><span class="badge ${p.status}">${cap(p.status)}</span></td>
+        <td class="qty-strong" style="text-align:right;">${all.toLocaleString()}</td>
+        ${per.map(x=>`<td style="text-align:right;${x.w.id===whFilter?hl+'font-weight:700;':''}">${vsvQtyCell(x.qty)}</td>`).join('')}
+        <td class="cell-sub" style="text-align:right;">${beg.toLocaleString()}</td>${hasAging()?`<td style="text-align:right;">${ageHtml(posmAge(p.code, whFilter))}</td>`:''}</tr>`;
+    }).join('')}
+  </tbody></table></div>`;
+}
+// Excel: All Qty + one column per warehouse.
+function vsvExportCols(code){
+  const per = vsvWhQty(code), o = {'All Qty (all warehouses)': per.reduce((t,x)=>t+x.qty,0)};
+  per.forEach(x=>{ o[x.w.name] = x.qty; });
+  return o;
+}
+function invListHtml(rows, whFilter, allMode){
+  if(vsvOn() && !allMode) return vsvListHtml(rows, whFilter);
+  const shown = rows.slice(0, invLimit);
+  if(!shown.length) return `<div class="empty-state">No POSM matches this filter.</div>`;
+  const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+  return `<div class="table-wrap"><table class="inv-table"><thead><tr><th>POSM</th><th>Type</th><th>BU</th><th>Status</th><th style="text-align:right;">${whFilter==='all'?'Total Qty':'Qty'}</th><th style="text-align:right;">Beginning</th>${hasAging()?'<th style="text-align:right;" title="Days since the first Stock In (oldest warehouse when showing all)">Days in WH</th>':''}${allMode?'<th>Where it is</th>':'<th>Actions</th>'}</tr></thead><tbody>
     ${shown.map(p=>{
       const qty = totalQtyForPosm(p.code, whFilter), beg = totalBeginningForPosm(p.code, whFilter);
       const needsDispose = p.status==='expired' || p.status==='obsolete';
       return `<tr><td><div class="row-flex">${tile(p,34)}<div><div class="cell-main">${p.code}</div><div class="cell-sub" title="${p.desc}">${p.desc}</div>${modelHtml(p)}</div></div></td>
         <td class="cell-sub">${p.type}</td><td>${buLabel(p.bu)}</td><td><span class="badge ${p.status}">${cap(p.status)}</span></td>
-        <td class="qty-strong" style="text-align:right;">${qty.toLocaleString()}</td><td class="cell-sub" style="text-align:right;">${beg.toLocaleString()}</td>
+        <td class="qty-strong" style="text-align:right;">${qty.toLocaleString()}</td><td class="cell-sub" style="text-align:right;">${beg.toLocaleString()}</td>${hasAging()?`<td style="text-align:right;">${ageHtml(posmAge(p.code, whFilter))}</td>`:''}
         ${allMode ? `<td style="font-size:12px;">${whereShort(p.code)}</td>` : `<td><div class="row-flex" style="gap:6px;flex-wrap:nowrap;">
           <select class="status-select admin-only" data-status-code="${p.code}" style="width:auto;">
             ${['active','expired','obsolete','deleted'].map(v=>`<option value="${v}" ${p.status===v?'selected':''}>${cap(v)}</option>`).join('')}
@@ -3400,7 +3546,7 @@ function renderInventory(){
   if(isRegionUser() && invScope==='all' && DATA_ALL){
     // Temporarily look at every warehouse's stock, then switch back.
     const savedData = DATA, savedWh = WAREHOUSES;
-    DATA = Object.assign({}, DATA, {inventory: DATA_ALL.inventory});
+    DATA = Object.assign({}, DATA, {inventory: DATA_ALL.inventory, aging: DATA_ALL.aging || DATA.aging});
     WAREHOUSES = ALL_WAREHOUSES;
     try{ renderInventoryCore(true); } finally { DATA = savedData; WAREHOUSES = savedWh; }
     return;
@@ -3430,12 +3576,20 @@ function renderInventoryCore(allMode){
     // Expired/obsolete POSM with zero quantity are not shown.
     if((p.status==='expired'||p.status==='obsolete') && totalQtyForPosm(p.code, whFilter)<=0) return false;
     if(invFilters.search && !posmMatches(p, invFilters.search)) return false;
+    if(invFilters.age!=='all'){ const a = posmAge(p.code, whFilter); if(!a || ageBucket(a.days)!==invFilters.age) return false; }
     return true;
   });
+  if(invFilters.sort==='oldest' || invFilters.sort==='newest'){
+    const dir = invFilters.sort==='oldest' ? 1 : -1;
+    const ageOf = new Map(rows.map(p=>{ const a = posmAge(p.code, whFilter); return [p.code, a ? a.days : null]; }));
+    // POSM with no stock (no age) always go last.
+    rows.sort((a,b)=>{ const x = ageOf.get(a.code), y = ageOf.get(b.code);
+      if(x==null && y==null) return 0; if(x==null) return 1; if(y==null) return -1; return dir*(y-x); });
+  }
   const html = `
     <div class="panel">
       <div class="panel-head">
-        <div><h3>${isRegionUser() ? (allMode ? 'All Warehouse Inventory' : 'My Inventory — '+escHtml(session.region)) : 'All Inventory'}</h3><div class="panel-sub">${allMode ? 'Stock across every warehouse in all regions (view only) — use this to find which warehouse has the POSM you need' : (isRegionUser() ? 'Stock of your region\'s warehouses — Stock In / Stock Out quantity here (new POSM are added by Admin)' : 'All POSM — mark items that need disposal as Expired/Obsolete, or Delete if no longer used at all')}</div></div>
+        <div><h3>${isRegionUser() ? (allMode ? 'All Warehouse Inventory' : 'My Inventory — '+escHtml(session.region)) : 'All Inventory'}</h3><div class="panel-sub">${allMode ? 'Stock across every warehouse in all regions (view only) — use this to find which warehouse has the POSM you need' : (vsvOn() ? 'All POSM — All Qty (all warehouses) and the quantity in each warehouse' : (isRegionUser() ? 'Stock of your region\'s warehouses — Stock In / Stock Out quantity here (new POSM are added by Admin)' : 'All POSM — mark items that need disposal as Expired/Obsolete, or Delete if no longer used at all'))}</div></div>
         <div class="panel-actions"><button class="btn" id="btnGoScan">${icon('scan',14)} Scan</button><button class="btn primary" id="btnStockIn">${icon('plus',14)} Stock In</button><button class="btn" id="btnStockOut">${icon('arrowDown',14)} Stock Out</button><button class="btn sm" id="btnExportInventory">${icon('download',13)} Excel</button></div>
       </div>
       ${isRegionUser() ? `<div class="seg" id="invScopeSeg" style="margin-bottom:12px;">
@@ -3445,9 +3599,12 @@ function renderInventoryCore(allMode){
       <div class="filters">
         <input type="text" id="invSearch" placeholder="Search code, description or model..." value="${invFilters.search}">
         <select id="invBuFilter"><option value="all">All Business Units</option>${BUS.map(b=>`<option value="${b}" ${invFilters.bu===b?'selected':''}>${buLabel(b)}</option>`).join('')}</select>
+        ${hasAging() ? `<select id="invAgeFilter" title="How long the POSM has been in the warehouse"><option value="all">All ages (days in warehouse)</option>${AGE_BUCKETS.map(b=>`<option value="${b.key}" ${invFilters.age===b.key?'selected':''}>${b.label} in warehouse</option>`).join('')}</select>
+        <select id="invSortSel" title="Sort"><option value="default" ${invFilters.sort==='default'?'selected':''}>Sort: Default</option><option value="oldest" ${invFilters.sort==='oldest'?'selected':''}>Sort: Longest in warehouse</option><option value="newest" ${invFilters.sort==='newest'?'selected':''}>Sort: Newest arrival</option></select>` : ''}
         <div class="seg" id="invViewSeg" title="Card or list view"><button data-view="cards" class="${invView==='cards'?'active':''}" aria-label="Card view">${icon('grid',14)} Cards</button><button data-view="list" class="${invView==='list'?'active':''}" aria-label="List view">${icon('list',14)} List</button></div>
         <div class="seg" id="invStatusSeg">${['all','active','disposal','expired','obsolete','deleted'].map(s=>`<button data-status="${s}" class="${invFilters.status===s?'active':''}">${s==='all'?'All':s==='disposal'?'For Disposal':s.charAt(0).toUpperCase()+s.slice(1)}</button>`).join('')}</div>
       </div>
+      ${vsvOn() && !allMode ? vsvSummaryHtml(rows) : ''}
       ${invView==='list' ? invListHtml(rows, whFilter, allMode) : `<div class="inv-grid">
         ${rows.slice(0, invLimit).map(p=>{
           const qty = totalQtyForPosm(p.code, whFilter);
@@ -3463,7 +3620,8 @@ function renderInventoryCore(allMode){
                 <div><div class="cell-sub">${whFilter==='all'?'Total Qty':'Qty — '+escHtml((whById(whFilter)||{}).name||whFilter)}</div><div class="qty-strong">${qty.toLocaleString()}</div></div>
                 <div style="text-align:right;"><div class="cell-sub">Beginning</div><div class="cell-sub" style="font-weight:600;">${beg.toLocaleString()}</div></div>
               </div>
-              ${allMode ? otherWhBreakdown(p.code) : ''}
+              ${hasAging() ? (()=>{ const a = posmAge(p.code, whFilter); return `<div class="inv-card-age" style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;margin-top:6px;"><span class="cell-sub">${whFilter==='all'?'Oldest stock in warehouse':'In warehouse'}</span>${ageHtml(a)}</div>`; })() : ''}
+              ${allMode ? otherWhBreakdown(p.code) : (vsvOn() ? vsvWhBreakdown(p.code, whFilter) : '')}
               <div class="inv-card-actions" ${allMode?'style="display:none;"':''}>
                 <select class="status-select admin-only" data-status-code="${p.code}" style="flex:1;">
                   <option value="active" ${p.status==='active'?'selected':''}>Active</option>
@@ -3493,7 +3651,9 @@ function renderInventoryCore(allMode){
   document.getElementById('btnExportInventory').addEventListener('click', ()=>{
     const exportRows = rows.map(p=>({
       Code:p.code, Description:p.desc, Model:p.model||'', Type:p.type, 'Business Unit':buLabel(p.bu), Status:p.status,
-      'Qty (filtered warehouse)': totalQtyForPosm(p.code, whFilter)
+      ...(vsvOn() ? (whFilter==='all' ? {} : {'Qty (filtered warehouse)': totalQtyForPosm(p.code, whFilter)}) : {'Qty (filtered warehouse)': totalQtyForPosm(p.code, whFilter)}),
+      ...(vsvOn() ? vsvExportCols(p.code) : {}),
+      ...(hasAging() ? (()=>{ const a = posmAge(p.code, whFilter); return {'Days in Warehouse': a ? a.days : '', 'In Warehouse Since': a ? a.since : '', 'Aging Bracket': a ? AGE_BUCKETS.find(b=>b.key===ageBucket(a.days)).label : ''}; })() : {})
     }));
     // Disposal / expired / obsolete lists carry the POSM picture in the PDF.
     exportRowsToExcel(exportRows, 'All-Inventory-'+todayStr()+'.xlsx', 'All Inventory', {photos: ['disposal','expired','obsolete'].includes(invFilters.status)});
@@ -3505,6 +3665,10 @@ function renderInventoryCore(allMode){
     invSearchTimer = setTimeout(()=>{ invLimit = INV_PAGE; renderInventory(); }, 220);
   });
   document.getElementById('invBuFilter').addEventListener('change', e=>{ invFilters.bu=e.target.value; invLimit = INV_PAGE; renderInventory(); });
+  const ageSel = document.getElementById('invAgeFilter');
+  if(ageSel) ageSel.addEventListener('change', e=>{ invFilters.age=e.target.value; invLimit = INV_PAGE; renderInventory(); });
+  const sortSel = document.getElementById('invSortSel');
+  if(sortSel) sortSel.addEventListener('change', e=>{ invFilters.sort=e.target.value; invLimit = INV_PAGE; renderInventory(); });
   document.getElementById('invStatusSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ invFilters.status=b.dataset.status; invLimit = INV_PAGE; renderInventory(); }));
   document.getElementById('invViewSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
     invView = b.dataset.view; try{ localStorage.setItem('vsviewer_rmas_inv_view', invView); }catch(e){}
@@ -3643,7 +3807,7 @@ function isOpeningReq(r){ return /store\s*(opening|reopening)/i.test(String(r &&
 const OPENING_BADGE = `<span class="badge opening" title="Store Opening / Reopening request">🏬 Store Opening</span>`;
 function reqCardHtml(r){
   const p = posmByCode(r.posmCode);
-  const isLate = isOverdue(r);
+  const isLate = isOverdue(r) || isSortingOverdue(r);
   const deliveredLate = r.status==='delivered' && r.dateDelivered && r.dueDate && new Date(r.dateDelivered) > new Date(r.dueDate);
   const opening = isOpeningReq(r);
   return `<div class="kcard${opening?' opening':''}"><div class="kcard-top"><span class="kcard-code">${r.posmCode}</span><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">${opening?OPENING_BADGE:''}${isLate?'<span class="badge late">Overdue</span>':(deliveredLate?'<span class="badge late">Late</span>':'')}</span></div>
@@ -3659,7 +3823,7 @@ function reqCardHtml(r){
       <div class="kcard-meta" style="margin-top:2px;"><span>${r.id}</span><span>Requested ${fmtDateShort(r.dateCreated)}</span></div>`
     : `<div class="kcard-desc">${p?p.desc:''} · Qty ${r.qty}</div>
     <div class="kcard-desc">${r.store} · TS: ${r.ts}</div>`}
-    <div class="kcard-meta"><span>${whById(r.warehouseId)?whById(r.warehouseId).name+' ('+whById(r.warehouseId).region+')':''}</span><span>${r.status==='for_delivery' && reqDueDate(r) ? 'Due '+fmtDateShort(reqDueDate(r)) : ''}</span></div>
+    <div class="kcard-meta"><span>${whById(r.warehouseId)?whById(r.warehouseId).name+' ('+whById(r.warehouseId).region+')':''}</span><span>${(r.status==='for_delivery' || r.status==='for_sorting') && reqDueDate(r) ? (r.status==='for_sorting'?'Sort by ':'Due ')+fmtDateShort(reqDueDate(r)) : ''}</span></div>
     ${r.purpose?`<div class="kcard-meta" style="margin-top:2px;"><span style="display:inline-flex;align-items:center;gap:4px;">${icon('target',12)} ${r.purpose}</span></div>`:''}
     ${r.createdBy?`<div class="kcard-meta" style="margin-top:2px;"><span>Created by ${r.createdBy}</span></div>`:''}
     ${r.status!=='delivered' ? `<div class="kcard-actions"><button class="btn sm primary" data-advance="${r.id}" style="flex:1">${r.status==='for_sorting'?'Move to For Delivery':'Mark Delivered'}</button></div>`
@@ -4103,6 +4267,47 @@ function expandIoRow(a){
   return Array.isArray(a) ? {w:a[0], c:a[1], in:+a[2]||0, out:+a[3]||0, tin:+a[4]||0, tout:+a[5]||0, disp:+a[6]||0, d60n:+a[7]||0, d60q:+a[8]||0, in30:+a[9]||0, out30:+a[10]||0} : a;
 }
 function hasIo(){ return !!(DATA && Array.isArray(DATA.ioSummary)); }
+/* ---- Warehouse aging: days since the first Stock In of the stock now sitting in each warehouse
+   (worked out by the server over ALL transactions; beginning stock counts from go-live). ---- */
+const AGE_BUCKETS = [
+  {key:'0-30', label:'0–30 days', min:0, max:30},
+  {key:'31-60', label:'31–60 days', min:31, max:60},
+  {key:'61-90', label:'61–90 days', min:61, max:90},
+  {key:'90+', label:'Over 90 days', min:91, max:Infinity},
+];
+function hasAging(){ return !!(DATA && Array.isArray(DATA.aging)); }
+let _ageSrc = null, _ageByKey = new Map();
+function ageIndex(){
+  if(_ageSrc !== DATA.aging){ _ageByKey = new Map(); (DATA.aging||[]).forEach(r=>_ageByKey.set(r.w + '\u0001' + r.c, r.since)); _ageSrc = DATA.aging; }
+  return _ageByKey;
+}
+function daysSinceDate(d){
+  if(!d || !/^\d{4}-\d{2}-\d{2}/.test(String(d))) return null;
+  const a = new Date(String(d).slice(0,10)+'T00:00:00'), b = new Date(todayStr()+'T00:00:00');
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+// Age of one POSM at one warehouse -> {days, since} (null when there is no stock there).
+function whAge(whId, code){
+  if(!hasAging()) return null;
+  const r = invRow(whId, code); if(!r || r.qty<=0) return null;
+  const since = ageIndex().get(whId + '\u0001' + code);
+  const days = daysSinceDate(since);
+  return days==null ? null : {days, since};
+}
+// Age of one POSM across the filtered warehouse(s): the OLDEST stock wins.
+function posmAge(code, whFilter){
+  if(!hasAging()) return null;
+  invIndex(); let best = null;
+  for(const r of (_invByCode.get(code) || [])){
+    if(r.qty<=0 || (whFilter && whFilter!=='all' && r.warehouseId!==whFilter)) continue;
+    const a = whAge(r.warehouseId, code);
+    if(a && (!best || a.days > best.days)) best = a;
+  }
+  return best;
+}
+function ageBucket(days){ return days==null ? null : AGE_BUCKETS.find(b=>days>=b.min && days<=b.max).key; }
+function ageColorVar(days){ return days==null ? 'var(--ink-faint)' : days<=30 ? 'var(--success)' : days<=60 ? 'var(--warning)' : days<=90 ? '#D9711C' : 'var(--danger)'; }
+function ageHtml(a){ return a ? `<span title="In warehouse since ${escHtml(a.since)}" style="color:${ageColorVar(a.days)};font-weight:700;">${a.days.toLocaleString()} day${a.days===1?'':'s'}</span>` : '<span class="cell-sub">—</span>'; }
 function ioRows(whFilter){ return DATA.ioSummary.filter(r=>(!whFilter || whFilter==='all' || r.w===whFilter) && matchesBUFilter(r.c)); }
 let _ioByCodeSrc = null, _ioByCode = new Map();
 function ioByCode(code){
@@ -4448,6 +4653,17 @@ function reviewPendingItem(id, decision){
       const targetId = res.payload && res.payload.id;
       const target = targetId && (res.action==='advanceRequest' ? DATA.requests : DATA.transfers).find(x=>x.id===targetId);
       if(target) target.status = 'rejected';
+      // A rejected request gives its qty back to the Inventory (done by Code.gs; mirrored here).
+      const ret = res.returned;
+      if(ret && res.action==='advanceRequest'){
+        if(target) target.stockDeducted = 'returned';
+        const base = DATA_ALL || DATA;   // change the full copy; the filtered view is rebuilt from it
+        let inv = base.inventory.find(r=>r.warehouseId===ret.warehouseId && r.posmCode===ret.posmCode);
+        if(!inv){ inv = {warehouseId:ret.warehouseId, posmCode:ret.posmCode, qty:0, beginningStock:0}; base.inventory.push(inv); }
+        inv.qty = Number(ret.newQty);
+        base.transactions.unshift({id:ret.txnId, date:ret.date, type:'in', posmCode:ret.posmCode, warehouseId:ret.warehouseId, qty:Number(ret.qty), reason:'Returned to stock — request rejected ('+ret.store+')', ref:ret.id, receiptImage:''});
+        if(base !== DATA){ DATA = scopeData(base); }
+      }
     }
     requestBackgroundRender();
   });
@@ -4768,6 +4984,7 @@ async function exportAnalyticsReport(asPdf){
       if(r.status==='delivered') timeliness = (r.dateDelivered && r.dueDate && new Date(r.dateDelivered)>new Date(r.dueDate)) ? 'Late' : 'On-time';
       else if(r.status==='rejected') timeliness = 'Rejected';
       else if(r.status==='for_delivery') timeliness = isOverdue(r) ? 'Overdue' : 'On Track';
+      else if(r.status==='for_sorting') timeliness = isSortingOverdue(r) ? 'Sorting Overdue' : 'Sorting On Track';
       else timeliness = 'Not yet in delivery';
       return {'Request ID':r.id, 'POSM Code':r.posmCode, 'Description':(posmByCode(r.posmCode)||{}).desc||'',
         Qty:r.qty, Warehouse:(whById(r.warehouseId)||{}).name||'', Store:r.store, 'Trade Supervisor':r.ts, Purpose:r.purpose||'',
