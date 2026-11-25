@@ -1211,16 +1211,9 @@ function requestBackgroundRender(){
 const SESSION_KEY = 'vsviewer_rmas_posm_session_v1';
 let session = null; // {role:'admin'|'user', name, password (admin only, kept for re-auth on each action)}
 
-function loadSession(){
-  try{ const raw = localStorage.getItem(SESSION_KEY); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
-}
 function saveSession(s){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }catch(e){} }
 function clearSession(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 
-function showLoginScreen(){
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-}
 function showApp(){
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';

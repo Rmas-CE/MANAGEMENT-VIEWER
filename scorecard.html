@@ -995,7 +995,6 @@ function renderImp(){
     pullRemote(true).then(()=>{if(view==='imp')renderImp()})};
   $('gPull').onclick=()=>pullRemote(true);$('gPush').onclick=()=>pushRemote(true);
   $('gOff').onclick=()=>{sheetUrl='';lsSet(URL_KEY,'');setSync('','Offline');renderImp();toast('Disconnected — offline mode')};
-  $('gCode').onclick=()=>download('Code.gs',CODE_GS,'text/plain');
   $('depSave').onclick=async()=>{S.sources.deploymentUrl=$('depUrl').value.trim();save();if(!S.sources.deploymentUrl){renderImp();return toast('Deployment KPI Tool disconnected')}
     $('depRes').innerHTML='<div class="flag blue" style="margin-top:0">Testing connection…</div>';
     try{const d=await fetchDeployments();const ts=new Set(d.records.map(r=>r.ts.trim().toLowerCase()));renderImp();
@@ -1103,7 +1102,7 @@ function applyGroups(list,srcName,opt={}){let upd=0,added=0,skip=0,reack=0,kept=
   return {upd,added,skip,reack,kept,skipped}}
 let syncState={cls:'',txt:'Offline'},pushT=null;
 function setSync(cls,txt){syncState={cls,txt};$('syncStat').className='sync '+cls;$('syncStat').textContent=txt;if($('gStat')){$('gStat').className='sync '+cls;$('gStat').textContent=txt}}
-function schedulePush(){return;if(!sheetUrl||!isAdmin())return;clearTimeout(pushT);setSync('','Saving…');pushT=setTimeout(()=>pushRemote(false),1200)}
+function schedulePush(){} // view only: never pushes
 function flatRows(only){const head=['Period','Status','Region','Agency','Trade Supervisor',...BU_PATHS.map(p=>p.split('.')[1]+' '+FIELD_LABEL[p.split('.')[2]]),...FLAT_KEYS.map(f=>FIELD_LABEL[f]),...KPIS.map(k=>k.short+' %'),'Weighted %','Deductions','Final %','Grade','Acknowledgment','TS Comment','Remarks','Last Updated'];
   const out=[head];const months=only||[LIVE,...lockedCycles().map(LOCK)];
   const all=[];months.forEach(m=>[...S.ts].filter(t=>!t.inactive||isLockedKey(m)).sort((a,b)=>a.region.localeCompare(b.region)||a.name.localeCompare(b.name)).forEach(t=>all.push([m+'|'+t.id,S.records[m+'|'+t.id]||null])));
@@ -1122,13 +1121,8 @@ async function api(action,payload){if(action!=='load')throw new Error('View only
 // Viewer (TS): show exactly what the sheet has — a viewer never pushes changes.
 function useRemote(remote){const before=JSON.stringify(S);S=normalizeState(remote);lastSnap=snap();lsSet(STORE_KEY,JSON.stringify(S));
   if(before!==JSON.stringify(S)){fillRegions();if(!$('modalHost').innerHTML)render()}}
-let pushing=false,pushAgain=false;
-async function pushRemote(manual){return;if(!sheetUrl||!isAdmin())return;if(pushing){pushAgain=true;return}pushing=true;setSync('','Saving…');
-  try{const j=await api('save',{password:ADMIN_PW,data:S,rows:flatRows()});
-    if(j.data)adopt(j.data);setSync('on','Synced '+nowT());if(manual)toast('Pushed to Google Sheets')}
-  catch(e){if(e.authError){authLost();setSync('err','Not saved — log in again');return}
-    setSync('err','Sync error — will retry');if(manual)toast('Sync failed: '+e.message);clearTimeout(pushT);pushT=setTimeout(()=>pushRemote(false),30000)}
-  finally{pushing=false;if(pushAgain){pushAgain=false;schedulePush()}}}
+const pushing=false;
+async function pushRemote(){} // view only: never pushes
 async function pullRemote(manual){if(!sheetUrl)return;if(!manual&&pushing)return;
   const c=creds();if(!c.password&&!c.key)return noAccess();setSync('','Loading…');
   try{const j=await api('load',c);
@@ -1142,246 +1136,6 @@ async function pullRemote(manual){if(!sheetUrl)return;if(!manual&&pushing)return
 // keep every open device fresh: pull when the tab comes back into view, and every 2 minutes while visible
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullRemote(false)});
 setInterval(()=>{if(document.visibilityState==='visible')pullRemote(false)},120000);
-
-const CODE_GS=`/**
- * VaultSync — TS POSM KPI Grading backend (Google Apps Script) — SECURED VERSION
- *
- * What changed (security):
- *  - The Admin password is checked HERE on the server, not in the browser.
- *    It is stored only as a salted hash in Script Properties — never in the sheet data.
- *  - Reading grades needs either the Admin password or the TS View Key
- *    (the TS link looks like  .../VS-TS-GRADING/?key=kpi-xxxxxxxxxx).
- *  - Saving grades and settings needs the Admin password.
- *  - With the View Key, a TS can only acknowledge / dispute a grade — nothing else.
- *
- * First run: your current Admin password keeps working, but CHANGE IT in Settings right away,
- * because the old version stored it where anyone could read it.
- *
- * Deploy: Deploy > Manage deployments > (pencil) Edit > Version: New version > Deploy.
- * (Editing the existing deployment keeps the same /exec URL, so the page keeps working.)
- * Access stays: Execute as Me, Who has access: Anyone.
- */
-const DATA_SHEET = 'KPI_DATA';   // tool storage (do not edit)
-const VIEW_SHEET = 'GRADES';     // readable table for reports
-const CHUNK = 40000;
-const MIN_PASS = 6;
-
-/* ============================== ENTRY POINTS ============================== */
-
-function doGet(e) {
-  try {
-    const p = (e && e.parameter) || {};
-    setup_();
-    const who = auth_(p.key, null);
-    if (!who) return out_({ ok: false, error: 'No access key. Please open the latest link from RMAS (it ends with ?key=...).' });
-    return out_({ ok: true, data: strip_(load_()), isAdmin: false });
-  } catch (err) { return out_({ ok: false, error: String(err) }); }
-}
-
-function doPost(e) {
-  let body;
-  try { body = JSON.parse(e.postData.contents); }
-  catch (err) { return out_({ ok: false, error: 'Bad request' }); }
-  try {
-    setup_();
-    const action = String(body.action || '');
-    const who = auth_(body.key, body.password);   // 'admin', 'viewer' or null
-
-    // Password given but wrong: slow down guessing, then refuse.
-    if (body.password && who !== 'admin') {
-      Utilities.sleep(1500);
-      return out_({ ok: false, error: 'Wrong admin password', authError: true });
-    }
-
-    if (action === 'login') {
-      if (who !== 'admin') return out_({ ok: false, error: 'Wrong admin password', authError: true });
-      return out_({ ok: true, mustChange: mustChange_() });
-    }
-
-    if (!who) return out_({ ok: false, error: 'No access key. Please open the latest link from RMAS (it ends with ?key=...).', keyError: true });
-
-    if (action === 'load') {
-      return out_({ ok: true, data: strip_(load_()), isAdmin: who === 'admin', mustChange: who === 'admin' ? mustChange_() : false });
-    }
-
-    if (action === 'ack') return withLock_(function () { return ack_(body); });
-
-    // ---------- everything below is Admin only ----------
-    if (who !== 'admin') return out_({ ok: false, error: 'Admin only', authError: true });
-
-    if (action === 'save') {
-      return withLock_(function () {
-        const incoming = body.data || {};
-        delete incoming.adminPass;
-        const merged = mergeState(load_(), incoming);
-        delete merged.adminPass;
-        save_(merged);
-        if (Array.isArray(body.rows)) writeView_(body.rows);
-        return out_({ ok: true, savedAt: new Date().toISOString(), data: strip_(merged) });
-      });
-    }
-
-    if (action === 'changePassword') {
-      const np = String(body.newPassword || '');
-      if (np.length < MIN_PASS) return out_({ ok: false, error: 'Password must be at least ' + MIN_PASS + ' characters' });
-      if (/^admin\\d*$/i.test(np)) return out_({ ok: false, error: 'Please choose a less obvious password' });
-      setPass_(np);
-      PropertiesService.getScriptProperties().deleteProperty('PASS_TEMP');
-      return out_({ ok: true });
-    }
-
-    if (action === 'getViewKey') return out_({ ok: true, key: props_().getProperty('VIEW_KEY') });
-
-    if (action === 'newViewKey') {
-      const k = newKey_();
-      props_().setProperty('VIEW_KEY', k);
-      return out_({ ok: true, key: k });
-    }
-
-    return out_({ ok: false, error: 'Unknown action' });
-  } catch (err) {
-    return out_({ ok: false, error: String(err) });
-  }
-}
-
-/* ============================== ACCESS ============================== */
-
-function props_() { return PropertiesService.getScriptProperties(); }
-
-// One-time setup: move the password out of the sheet data and create the TS View Key.
-function setup_() {
-  const p = props_();
-  if (p.getProperty('ADMIN_HASH') && p.getProperty('VIEW_KEY')) return;
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    if (!p.getProperty('ADMIN_HASH')) {
-      const data = load_();
-      const current = (data && data.adminPass) ? String(data.adminPass) : 'admin123';
-      setPass_(current);
-      p.setProperty('PASS_TEMP', '1');             // old password was readable by anyone — must be changed
-      if (data && 'adminPass' in data) { delete data.adminPass; save_(data); }
-    }
-    if (!p.getProperty('VIEW_KEY')) p.setProperty('VIEW_KEY', newKey_());
-  } finally { lock.releaseLock(); }
-}
-
-function auth_(key, password) {
-  const p = props_();
-  if (password) {
-    const salt = p.getProperty('ADMIN_SALT') || '';
-    if (hash_(salt + String(password)) === p.getProperty('ADMIN_HASH')) return 'admin';
-    return null;
-  }
-  if (key && String(key) === p.getProperty('VIEW_KEY')) return 'viewer';
-  return null;
-}
-
-function setPass_(pass) {
-  const salt = Utilities.getUuid();
-  props_().setProperties({ ADMIN_SALT: salt, ADMIN_HASH: hash_(salt + pass) });
-}
-
-function mustChange_() { return props_().getProperty('PASS_TEMP') === '1'; }
-
-function hash_(s) {
-  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s, Utilities.Charset.UTF_8)
-    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
-}
-
-function newKey_() {
-  return 'kpi-' + Utilities.getUuid().replace(/-/g, '').slice(0, 14);
-}
-
-/* ============================== TS ACKNOWLEDGMENT ============================== */
-
-// A TS (View Key) can only set the acknowledgment of one existing grade.
-function ack_(body) {
-  const rk = String(body.rk || '');
-  const status = String(body.status || '');
-  const comment = String(body.comment || '').slice(0, 500);
-  if (status !== 'acknowledged' && status !== 'disputed') return out_({ ok: false, error: 'Invalid status' });
-  if (status === 'disputed' && !comment.trim()) return out_({ ok: false, error: 'Please write the reason for the dispute' });
-  const data = load_();
-  if (!data || !data.records || !data.records[rk]) return out_({ ok: false, error: 'Grade not found — please refresh the page' });
-  const now = new Date().toISOString();
-  data.records[rk].ack = { status: status, comment: comment, at: now };
-  data.records[rk].updated = now;
-  save_(data);
-  return out_({ ok: true, data: strip_(data) });
-}
-
-/* ============================== STORAGE ============================== */
-
-function withLock_(fn) {
-  const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try { return fn(); } finally { lock.releaseLock(); }
-}
-
-function strip_(data) {
-  if (!data) return data;
-  const c = Object.assign({}, data);
-  delete c.adminPass;
-  return c;
-}
-
-function sheet_(name) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  return ss.getSheetByName(name) || ss.insertSheet(name);
-}
-
-function load_() {
-  const sh = sheet_(DATA_SHEET);
-  const n = sh.getLastRow();
-  if (!n) return null;
-  const txt = sh.getRange(1, 1, n, 1).getValues().map(function (r) { return String(r[0]).slice(1); }).join('');
-  return txt ? JSON.parse(txt) : null;
-}
-
-function save_(data) {
-  const sh = sheet_(DATA_SHEET);
-  const s = JSON.stringify(data);
-  const rows = [];
-  for (let i = 0; i < s.length; i += CHUNK) rows.push(['x' + s.slice(i, i + CHUNK)]); // 'x' prefix keeps cells as plain text
-  sh.clear();
-  if (rows.length) sh.getRange(1, 1, rows.length, 1).setValues(rows);
-}
-
-function writeView_(rows) {
-  const sh = sheet_(VIEW_SHEET);
-  sh.clear();
-  if (!rows.length) return;
-  const w = Math.max.apply(null, rows.map(function (r) { return r.length; }));
-  const data = rows.map(function (r) { const x = r.slice(); while (x.length < w) x.push(''); return x; });
-  sh.getRange(1, 1, data.length, w).setValues(data);
-  sh.getRange(1, 1, 1, w).setFontWeight('bold').setBackground('#0e2733').setFontColor('#ffffff');
-  sh.setFrozenRows(1);
-}
-
-// Merge with what other devices saved (newest edit wins per record / TS; deletions kept)
-function mergeState(a, b) {
-  if (!a || !a.records) return b; if (!b || !b.records) return a;
-  const str = function (v) { return String(v || ''); }; const o = {};
-  const base = str(a.settingsUpdated) >= str(b.settingsUpdated) ? a : b;
-  ['weights', 'grades', 'deductions', 'sources', 'buMap', 'settingsUpdated'].forEach(function (k) { o[k] = base[k]; });
-  const tomb = function (x, y) { const t = Object.assign({}, x || {}); Object.keys(y || {}).forEach(function (k) { if (!t[k] || str(y[k]) > str(t[k])) t[k] = y[k]; }); return t; };
-  o.deleted = tomb(a.deleted, b.deleted); o.deletedTs = tomb(a.deletedTs, b.deletedTs);
-  o.records = {}; Object.keys(Object.assign({}, a.records, b.records)).forEach(function (k) {
-    const x = a.records[k], y = b.records[k];
-    const r = !x ? y : !y ? x : (str(x.updated) >= str(y.updated) ? x : y);
-    if (o.deleted[k] && str(o.deleted[k]) >= str(r.updated)) return; o.records[k] = r;
-  });
-  const m = {}; (a.ts || []).concat(b.ts || []).forEach(function (t) { const c = m[t.id]; if (!c || str(t.updated) > str(c.updated)) m[t.id] = t; });
-  o.ts = Object.keys(m).map(function (id) { return m[id]; }).filter(function (t) { return !(o.deletedTs[t.id] && str(o.deletedTs[t.id]) >= str(t.updated)); });
-  return o;
-}
-
-function out_(o) {
-  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
-}
-
-`;
 
 /* =====================================================================
    SETTINGS
@@ -1461,7 +1215,7 @@ function renderSet(){
   document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const t=S.ts.find(x=>x.id===b.dataset.del);modalConfirm(`Delete ${t.name} and all their grades?`,()=>{
     S.ts=S.ts.filter(x=>x.id!==t.id);Object.keys(S.records).forEach(k=>{if(k.endsWith('|'+t.id))delete S.records[k]});save();fillRegions();renderSet();toast('Deleted')})});
   $('sExpAll').onclick=()=>exportCsv();
-  $('sBackup').onclick=()=>download('TS_POSM_KPI_backup_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(S,null,1),'application/json');
+  $('sBackup').onclick=()=>download('TS_POSM_KPI_backup_'+manilaToday()+'.json',JSON.stringify(S,null,1),'application/json');
   $('sRestore').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const x=JSON.parse(await f.text());if(!x.ts||!x.records)throw 0;S=normalizeState(x);save();fillRegions();render();toast('Backup restored')}catch(_){toast('Invalid backup file')}};
   $('sReset').onclick=()=>modalConfirm('Delete ALL Trade Supervisors and grades? Settings and connected tools are kept. Download a Backup first if unsure.',()=>{S.ts=[];S.records=Object.fromEntries(Object.entries(S.records).filter(([k])=>k.endsWith('|'+LOCK_MARK)));delete S.records[TS_LIST_META];save();fillRegions();render();toast('All TS & grades cleared')});
 }
@@ -1572,7 +1326,7 @@ async function slideBlob(){
     return await new Promise(r=>cv.toBlob(r,"image/png"));}
   finally{host.remove();}
 }
-function slideName(){return "ts_posm_kpi_slide_"+new Date().toISOString().slice(0,10)+".png";}
+function slideName(){return "ts_posm_kpi_slide_"+manilaToday()+".png";}
 async function withBusy(btn,fn){btn.disabled=true;const t=btn.textContent;btn.textContent="Preparing…";try{await fn();}finally{btn.disabled=false;btn.textContent=t;}}
 $("slidePng").onclick=()=>withBusy($("slidePng"),async()=>{
   let blob;try{blob=await slideBlob();}catch(e){toast("Could not render the image. Use Print or save PDF instead.");return;}
@@ -1651,7 +1405,7 @@ setInterval(async()=>{if(workCycle()<openCycle()){if(sheetUrl)await pullRemote(f
     var rows = flatRows(), wb = XLSX.utils.book_new(), ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = rows[0].map(function(h,i){ return {wch: Math.min(40, Math.max(10, String(h).length + 2, i<2 ? 22 : 0))}; });
     XLSX.utils.book_append_sheet(wb, ws, 'TS KPI Grades');
-    XLSX.writeFile(wb, 'TS-POSM-KPI-Grades-' + new Date().toISOString().slice(0,10) + '.xlsx');
+    XLSX.writeFile(wb, 'TS-POSM-KPI-Grades-' + manilaToday() + '.xlsx');
   };
   // PDF = the browser's "Save as PDF" of the page currently shown (Dashboard or a TS Scorecard).
   document.getElementById('vsvPdf').onclick = function(){ window.print(); };
