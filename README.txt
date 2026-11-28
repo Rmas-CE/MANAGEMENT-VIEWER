@@ -12,8 +12,9 @@ Files
   inventory.html   POSM Inventory + Requests, Metrics, Beginning Stock, Movement — Excel / PDF downloads
   scorecard.html   TS POSM KPI Grading — Download Excel / Download PDF
   execution.html   POSM Execution Dashboard (TS store visits, POSM status, store flooring) — Download Excel / PDF
-  VaultSync-Viewer.html  One-file version of all of the above (optional)
   ViewerMirror.gs  Script for the new Viewer Mirror Google Sheet
+  training/        Video training with AI SAM (index.html + voice/ + poster.webp) — shown under Tutorials.
+                   Made from the VS-MANAGEMENT-TRAINING folder: python tools/publish.py ..\MANAGEMENT-VIEWER\training
 
 SETUP
 1) New Google Sheet for the viewer
@@ -37,7 +38,7 @@ SETUP
    (read only). The Master List (edit stores / TS / models) and "Paste TS CSV" are removed.
 
 3) GitHub (account Rmas-CE)
-   New public repo e.g. VS-BOSS-VIEW › upload index.html, inventory.html, scorecard.html, execution.html (replace the old ones)
+   New public repo e.g. VS-BOSS-VIEW › upload index.html, inventory.html, scorecard.html, execution.html (replace the old ones) and the whole training folder
    Settings › Pages › main / root › Save
    Link for the bosses: https://rmas-ce.github.io/VS-BOSS-VIEW/
 

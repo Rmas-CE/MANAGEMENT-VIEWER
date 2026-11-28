@@ -137,6 +137,10 @@ main{max-width:1080px;margin:0 auto;padding:30px 24px 8px}
 .vb{display:block;padding:12px 14px 14px}
 .vb .vt{display:block;font-size:14px;font-weight:600}
 .vb .vd{display:block;font-size:12px;color:var(--ink-soft);margin-top:3px}
+.vids.solo{grid-template-columns:1fr}
+.vids.solo .vid{display:grid;grid-template-columns:minmax(220px,360px) 1fr;align-items:center}
+.vids.solo .vb .vt{font-size:16px}
+.vids.solo .vb .vd{font-size:13px}
 
 footer{max-width:1080px;margin:0 auto;padding:18px 24px 30px;border-top:1px solid var(--g2);display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;color:var(--ink-soft);font-size:12px}
 footer .ver{color:var(--ink-soft);opacity:.8}
@@ -168,6 +172,7 @@ footer .ver{color:var(--ink-soft);opacity:.8}
   .vids{grid-template-columns:1fr;gap:10px}
   .vid{display:grid;grid-template-columns:128px 1fr}
   .vth{aspect-ratio:auto;min-height:84px}
+  .vids.solo .vid{grid-template-columns:128px 1fr}
   footer{padding:16px 16px 28px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -268,10 +273,9 @@ const GUIDES = [
   {title:"Bespoke AI Laundry Merch Guide 2024",           bu:"HA", file:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-bespoke-ai-laundry-2024.pdf",      cover:"https://rmas-ce.github.io/CE-VAULT-SYNC/guides/wm-bespoke-ai-laundry-2024.jpg",      pages:7,  sizeMB:0.8, previous:true, short:"2024 Bespoke AI Laundry"}
 ];
 
+/* Video training with AI SAM (training/ folder next to this page). topics = number of videos inside. */
 const SIMS = [
-  {title:"How to install",          desc:"Put the Request Form and Inventory Tool on your phone — Android and iPhone", href:"https://rmas-ce.github.io/CE-VAULT-SYNC/tutorials/install/",   poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/images/sim-install.webp",   steps:23},
-  {title:"Request Form & Proof",    desc:"Request POSM, submit the cart, upload proof of deployment",                   href:"https://rmas-ce.github.io/CE-VAULT-SYNC/tutorials/request/",   poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/images/sim-request.webp",   steps:18},
-  {title:"Inventory tool training", desc:"Stock in/out, scanning, labels, requests, approvals and reports",             href:"https://rmas-ce.github.io/CE-VAULT-SYNC/tutorials/inventory/", poster:"https://rmas-ce.github.io/CE-VAULT-SYNC/images/sim-inventory.webp", steps:64}
+  {title:"Management Viewer Training", desc:"Video tutorial kasama si AI SAM: ano ang makikita ninyo sa Dashboard, All Inventory, Requests, Metrics at mga report, at paano ito makakatulong sa desisyon. May quiz bawat topic.", href:VB+"training/", poster:VB+"training/poster.webp", topics:11}
 ];
 
 /* =====================================================================
@@ -381,12 +385,14 @@ document.getElementById('guidesSub').textContent = `${current.length} current ·
 renderGuides();
 
 /* ---------- tutorials (folded by default; remembers the visitor's choice) ---------- */
-const totalSteps = SIMS.reduce((n,v)=>n+v.steps,0);
-document.getElementById('tutSummary').textContent = `${SIMS.length} tap-through simulations · ${totalSteps} steps · start with installation`;
-document.getElementById('vidGrid').innerHTML = SIMS.map((v,i)=>`
-  <a class="vid" href="${encodeURI(v.href)}" aria-label="Open simulation: ${esc(v.title)}, ${v.steps} steps">
-    <span class="vth" style="background-image:url('${encodeURI(v.poster)}')"><span class="dur">${v.steps} steps</span></span>
-    <span class="vb"><span class="vt">${i+1} · ${esc(v.title)}</span><span class="vd">${esc(v.desc)}</span><span class="vgo">Open simulation →</span></span>
+const totalTopics = SIMS.reduce((n,v)=>n+v.topics,0);
+document.getElementById('tutSummary').textContent = `Video training kasama si AI SAM · ${totalTopics} topics · may quiz`;
+const vidGrid = document.getElementById('vidGrid');
+vidGrid.classList.toggle('solo', SIMS.length === 1);
+vidGrid.innerHTML = SIMS.map((v,i)=>`
+  <a class="vid" href="${encodeURI(v.href)}" aria-label="Open video training: ${esc(v.title)}, ${v.topics} topics">
+    <span class="vth" style="background-image:url('${encodeURI(v.poster)}')"><span class="dur">${v.topics} topics</span></span>
+    <span class="vb"><span class="vt">${SIMS.length > 1 ? (i+1)+' · ' : ''}${esc(v.title)}</span><span class="vd">${esc(v.desc)}</span><span class="vgo">Panoorin ang training →</span></span>
   </a>`).join('');
 const tutToggle = document.getElementById('tutToggle'), tutWrap = document.getElementById('tutWrap');
 function setTut(open){ tutToggle.setAttribute('aria-expanded', String(open)); tutWrap.hidden = !open; }
